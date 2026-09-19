@@ -1,0 +1,19 @@
+# Environments
+venv/
+env/
+.env
+.venv/
+env.bak/
+venv.bak/
+
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Next.js / Frontend
+node_modules/
+.next/
+out/
+build/
+.DS_Store
