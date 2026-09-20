@@ -36,22 +36,22 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-slate-50">
-      <div className="max-w-md w-full bg-white rounded-xl shadow-lg p-8">
+    <div className="min-h-screen flex items-center justify-center bg-bg-main">
+      <div className="max-w-md w-full bg-surface rounded-xl shadow-lg border border-border-main p-8">
         <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-teal-600 mb-2">PhysioDesk</h1>
-          <p className="text-slate-500">Sign in to your account</p>
+          <h1 className="text-3xl font-bold text-primary mb-2">PhysioDesk</h1>
+          <p className="text-text-secondary">Sign in to your account</p>
         </div>
 
         {error && (
-          <div className="bg-red-50 text-red-600 p-3 rounded-md mb-6 text-sm text-center">
+          <div className="bg-status-error-soft text-status-error p-3 rounded-md mb-6 text-sm text-center">
             {error}
           </div>
         )}
 
         <form onSubmit={handleSubmit} className="space-y-6">
           <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">
+            <label className="block text-sm font-medium text-text-primary mb-1">
               Email Address
             </label>
             <input
@@ -59,13 +59,13 @@ export default function LoginPage() {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
-              className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500 outline-none transition-colors"
+              className="w-full px-4 py-2 bg-surface text-text-primary border border-border-main rounded-lg focus:ring-2 focus:ring-primary focus:border-primary outline-none transition-colors"
               placeholder="admin@physiodesk.com"
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">
+            <label className="block text-sm font-medium text-text-primary mb-1">
               Password
             </label>
             <input
@@ -73,7 +73,7 @@ export default function LoginPage() {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
-              className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500 outline-none transition-colors"
+              className="w-full px-4 py-2 bg-surface text-text-primary border border-border-main rounded-lg focus:ring-2 focus:ring-primary focus:border-primary outline-none transition-colors"
               placeholder="••••••••"
             />
           </div>
@@ -81,13 +81,13 @@ export default function LoginPage() {
           <button
             type="submit"
             disabled={loading}
-            className="w-full bg-teal-600 text-white py-2 px-4 rounded-lg hover:bg-teal-700 focus:ring-4 focus:ring-teal-500/20 transition-colors disabled:opacity-50 disabled:cursor-not-allowed font-medium"
+            className="w-full bg-primary text-surface py-2 px-4 rounded-lg hover:opacity-90 focus:ring-4 focus:ring-primary/20 transition-colors disabled:opacity-50 disabled:cursor-not-allowed font-medium"
           >
             {loading ? 'Signing in...' : 'Sign In'}
           </button>
         </form>
         
-        <div className="mt-6 text-center text-sm text-slate-500">
+        <div className="mt-6 text-center text-sm text-text-secondary">
           <p>Demo Admin: admin@physiodesk.com / password123</p>
           <p>Demo Staff: staff@physiodesk.com / password123</p>
         </div>

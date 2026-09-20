@@ -20,13 +20,13 @@ export default function Sidebar() {
     routes.push({ name: 'Therapists', href: '/therapists', icon: UserRoundCog });
   }
   
-  // Both can see billing but staff is read-only (enforced via API, here we just show the link)
+  // Both can see billing but staff is read-only
   routes.push({ name: 'Billing', href: '/billing', icon: CreditCard });
 
   return (
-    <div className="w-64 bg-slate-900 text-white flex flex-col h-screen fixed left-0 top-0">
-      <div className="h-16 flex items-center justify-center border-b border-slate-700">
-        <h1 className="text-xl font-bold tracking-wider text-teal-400">PhysioDesk</h1>
+    <div className="w-64 bg-secondary text-surface flex flex-col h-screen fixed left-0 top-0">
+      <div className="h-16 flex items-center justify-center border-b border-secondary-light">
+        <h1 className="text-xl font-bold tracking-wider text-primary-soft">PhysioDesk</h1>
       </div>
       <nav className="flex-1 py-6 px-3 space-y-1 overflow-y-auto">
         {routes.map((route) => {
@@ -41,8 +41,8 @@ export default function Sidebar() {
               href={route.href}
               className={`flex items-center gap-3 px-3 py-3 rounded-lg transition-colors duration-200 ${
                 actuallyActive
-                  ? 'bg-teal-600 text-white'
-                  : 'text-slate-300 hover:bg-slate-800 hover:text-white'
+                  ? 'bg-primary text-surface'
+                  : 'text-primary-soft hover:bg-secondary-light hover:text-surface'
               }`}
             >
               <Icon className="w-5 h-5" />
@@ -51,7 +51,7 @@ export default function Sidebar() {
           );
         })}
       </nav>
-      <div className="p-4 border-t border-slate-700 text-xs text-slate-400 text-center">
+      <div className="p-4 border-t border-secondary-light text-xs text-primary-soft text-center opacity-70">
         &copy; 2026 PhysioDesk
       </div>
     </div>

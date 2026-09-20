@@ -21,7 +21,7 @@ export default function DashboardLayout({
   }, [token, isLoading, router]);
 
   if (isLoading) {
-    return <div className="min-h-screen flex items-center justify-center bg-slate-50 text-slate-500">Loading PhysioDesk...</div>;
+    return <div className="min-h-screen flex items-center justify-center bg-bg-main text-text-secondary">Loading PhysioDesk...</div>;
   }
 
   if (!token) {
@@ -29,7 +29,7 @@ export default function DashboardLayout({
   }
 
   return (
-    <div className="flex min-h-screen bg-slate-50 font-sans">
+    <div className="flex min-h-screen bg-bg-main font-sans">
       <Sidebar />
       <div className="flex-1 ml-64 flex flex-col">
         <Header />
