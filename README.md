@@ -21,24 +21,109 @@ During the development of this application, the following reasonable assumptions
 4.  **Authentication:** We implemented secure, stateless authentication using JSON Web Tokens (JWT) stored in HTTP cookies/local storage for the frontend, with passwords securely hashed via `bcrypt` in the database.
 5.  **Design System:** We adhered strictly to the provided hex color palette, mapping the provided colors into a customized Tailwind CSS theme (`globals.css`).
 
-## Running the Application
+## 🚀 Detailed Setup Instructions
 
-### Backend Setup
-1. Navigate to the `backend/` directory.
-2. Create a virtual environment: `python -m venv venv`
-3. Activate it: `.\venv\Scripts\activate` (Windows) or `source venv/bin/activate` (Mac/Linux)
-4. Install dependencies: `pip install -r requirements.txt`
-5. Ensure PostgreSQL is running and update the `DATABASE_URL` in `app/db/database.py` if necessary.
-6. Run migrations: `alembic upgrade head`
-7. Seed the database with demo data: `python seed.py`
-8. Start the server: `uvicorn app.main:app --reload` (Runs on `http://localhost:8000`)
+Follow these step-by-step instructions to get the PhysioDesk application running on your local machine.
 
-### Frontend Setup
-1. Navigate to the `frontend/` directory.
-2. Install dependencies: `npm install`
-3. Start the development server: `npm run dev`
-4. Access the web app at `http://localhost:3000`
+### Prerequisites
+Before you begin, ensure you have the following installed:
+*   **Python 3.12+**
+*   **Node.js 18+** & npm
+*   **PostgreSQL 17+**
 
-### Demo Credentials
-*   **Admin:** `admin@physiodesk.com` / `password123`
-*   **Staff:** `staff@physiodesk.com` / `password123`
+---
+
+### 1. Database Setup
+1. Open your PostgreSQL terminal (psql) or pgAdmin.
+2. Create a new database for the project:
+   ```sql
+   CREATE DATABASE physiodesk;
+   ```
+3. Note your PostgreSQL username and password (the default username is usually `postgres`).
+
+---
+
+### 2. Backend Setup (FastAPI)
+
+1. Open your terminal and navigate to the backend directory:
+   ```bash
+   cd backend
+   ```
+
+2. Create a Python virtual environment to isolate dependencies:
+   ```bash
+   # On Windows:
+   python -m venv venv
+   
+   # On macOS/Linux:
+   python3 -m venv venv
+   ```
+
+3. Activate the virtual environment:
+   ```bash
+   # On Windows:
+   .\venv\Scripts\activate
+   
+   # On macOS/Linux:
+   source venv/bin/activate
+   ```
+
+4. Install the required Python packages:
+   ```bash
+   pip install -r requirements.txt
+   ```
+
+5. (Optional) By default, the app expects the database at `postgresql://postgres:password@localhost/physiodesk`. If your postgres credentials differ, update the `SQLALCHEMY_DATABASE_URL` string located inside `backend/app/db/database.py`.
+
+6. Run the database migrations using Alembic. This will automatically create all the necessary tables in your PostgreSQL database:
+   ```bash
+   alembic upgrade head
+   ```
+
+7. Seed the database with initial demo data (demo users, dummy patients, therapists, etc.):
+   ```bash
+   python seed.py
+   ```
+
+8. Start the FastAPI development server:
+   ```bash
+   uvicorn app.main:app --reload
+   ```
+   *The backend API will now be running at `http://localhost:8000`.*
+   *You can view the auto-generated Swagger documentation at `http://localhost:8000/docs`.*
+
+---
+
+### 3. Frontend Setup (Next.js)
+
+1. Open a **new** terminal window (keep the backend running in the first one) and navigate to the frontend directory:
+   ```bash
+   cd frontend
+   ```
+
+2. Install the necessary Node.js dependencies:
+   ```bash
+   npm install
+   ```
+
+3. Start the Next.js development server:
+   ```bash
+   npm run dev
+   ```
+   *The frontend application will now be running at `http://localhost:3000`.*
+
+---
+
+### 4. Accessing the Application
+
+Open your web browser and navigate to `http://localhost:3000`. You can log in using the seed data credentials provided below.
+
+### 🔑 Demo Credentials
+The `seed.py` script automatically provisions the following accounts:
+
+*   **Administrator (Full Access):**
+    *   **Email:** `admin@physiodesk.com`
+    *   **Password:** `password123`
+*   **Staff Member (Restricted Access):**
+    *   **Email:** `staff@physiodesk.com`
+    *   **Password:** `password123`
