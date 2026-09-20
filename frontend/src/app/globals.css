@@ -26,6 +26,10 @@
   
   --color-status-info: #5E6B78;
   --color-status-info-soft: #E7EBEE;
+
+  --font-sans: var(--font-inter);
+  --font-fraunces: var(--font-fraunces);
+  --font-mono: var(--font-ibm-plex-mono);
 }
 
 /*

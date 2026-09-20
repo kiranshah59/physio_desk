@@ -37,9 +37,9 @@ export default function LoginPage() {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-bg-main">
-      <div className="max-w-md w-full bg-surface rounded-xl shadow-lg border border-border-main p-8">
+      <div className="max-w-md w-full bg-surface rounded-xl shadow-md border border-border-main p-8">
         <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-primary mb-2">PhysioDesk</h1>
+          <h1 className="text-3xl font-fraunces font-bold text-primary mb-2">PhysioDesk</h1>
           <p className="text-text-secondary">Sign in to your account</p>
         </div>
 

@@ -22,6 +22,8 @@ export default function BillingPage() {
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [patients, setPatients] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [search, setSearch] = useState('');
+  const [filter, setFilter] = useState('all');
   
   // Modal state
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -91,7 +93,7 @@ export default function BillingPage() {
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
-        <h1 className="text-2xl font-bold text-text-primary">Billing & Invoices</h1>
+        <h1 className="text-2xl font-fraunces font-bold text-text-primary">Billing & Invoices</h1>
         {user?.role === 'admin' && (
           <button
             onClick={() => setIsModalOpen(true)}
@@ -103,7 +105,30 @@ export default function BillingPage() {
         )}
       </div>
 
-      <div className="bg-surface rounded-xl shadow-sm border border-border-main overflow-hidden">
+      <div className="bg-surface p-4 rounded-xl shadow-md border border-border-main flex items-center gap-3">
+        <div className="w-5 h-5 text-text-secondary">🔍</div>
+        <input
+          type="text"
+          placeholder="Search invoices by patient..."
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          className="flex-1 outline-none text-text-primary bg-transparent"
+        />
+        <div className="border-l border-border-main pl-3">
+          <select 
+            value={filter} 
+            onChange={(e) => setFilter(e.target.value)}
+            className="bg-bg-main text-text-secondary text-sm px-3 py-1.5 rounded-lg border border-border-main outline-none focus:ring-2 focus:ring-primary"
+          >
+            <option value="all">All Statuses</option>
+            <option value="due">Due</option>
+            <option value="paid">Paid</option>
+            <option value="overdue">Overdue</option>
+          </select>
+        </div>
+      </div>
+
+      <div className="bg-surface rounded-xl shadow-md border border-border-main overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-left">
             <thead className="bg-bg-main text-text-secondary text-sm border-b border-border-main">
@@ -125,19 +150,19 @@ export default function BillingPage() {
               ) : invoices.length > 0 ? (
                 invoices.map((inv) => (
                   <tr key={inv.id} className="hover:bg-bg-main/50 transition-colors">
-                    <td className="px-6 py-4 font-medium text-text-primary">
+                    <td className="px-6 py-4 font-medium text-text-primary font-mono">
                       INV-{inv.id.toString().padStart(4, '0')}
                     </td>
                     <td className="px-6 py-4 font-medium">
                       <div className="flex items-center gap-2">
                         <User className="w-4 h-4 text-text-secondary" />
-                        {inv.patient?.name || `ID: ${inv.patient_id}`}
+                        {inv.patient?.name || <span className="font-mono">ID: {inv.patient_id}</span>}
                       </div>
                     </td>
                     <td className="px-6 py-4 text-text-secondary">
                       {inv.service_package}
                     </td>
-                    <td className="px-6 py-4 font-bold text-text-primary">
+                    <td className="px-6 py-4 font-bold text-text-primary font-mono">
                       ${inv.amount.toFixed(2)}
                     </td>
                     <td className="px-6 py-4">
@@ -174,7 +199,7 @@ export default function BillingPage() {
         <div className="fixed inset-0 bg-secondary/50 flex items-center justify-center z-50 p-4">
           <div className="bg-surface rounded-xl shadow-xl w-full max-w-lg overflow-hidden border border-border-main">
             <div className="px-6 py-4 border-b border-border-main flex justify-between items-center bg-bg-main">
-              <h3 className="text-lg font-bold text-text-primary">Create Invoice</h3>
+              <h3 className="text-lg font-fraunces font-bold text-text-primary">Create Invoice</h3>
               <button onClick={() => setIsModalOpen(false)} className="text-text-secondary hover:text-text-primary text-xl font-bold">
                 <X className="w-5 h-5" />
               </button>

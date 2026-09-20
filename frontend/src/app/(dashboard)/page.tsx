@@ -39,7 +39,7 @@ export default function DashboardPage() {
     <div className="space-y-6">
       <div className="flex justify-between items-end">
         <div>
-          <h1 className="text-2xl font-bold text-text-primary">Dashboard Overview</h1>
+          <h1 className="text-2xl font-fraunces font-bold text-text-primary">Dashboard Overview</h1>
           <p className="text-text-secondary mt-1">Here's what's happening at PhysioDesk today.</p>
         </div>
         <div className="text-text-secondary font-medium flex items-center gap-2">
@@ -52,13 +52,13 @@ export default function DashboardPage() {
         {statCards.map((card, i) => {
           const Icon = card.icon;
           return (
-            <div key={i} className="bg-surface rounded-xl shadow-sm border border-border-main p-6 flex items-center gap-4">
+            <div key={i} className="bg-surface rounded-xl shadow-md border border-border-main p-6 flex items-center gap-4">
               <div className={`p-4 rounded-full ${card.bg} ${card.color}`}>
                 <Icon className="w-6 h-6" />
               </div>
               <div>
                 <p className="text-sm text-text-secondary font-medium">{card.title}</p>
-                <h3 className="text-2xl font-bold text-text-primary mt-1">{card.value}</h3>
+                <h3 className="text-2xl font-fraunces font-bold text-text-primary mt-1">{card.value}</h3>
               </div>
             </div>
           );
@@ -67,9 +67,9 @@ export default function DashboardPage() {
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Recent Patients Table */}
-        <div className="lg:col-span-2 bg-surface rounded-xl shadow-sm border border-border-main">
+        <div className="lg:col-span-2 bg-surface rounded-xl shadow-md border border-border-main">
           <div className="p-6 border-b border-border-main">
-            <h2 className="text-lg font-bold text-text-primary">Recent Patients</h2>
+            <h2 className="text-lg font-fraunces font-bold text-text-primary">Recent Patients</h2>
           </div>
           <div className="p-0 overflow-x-auto">
             <table className="w-full text-left">
@@ -108,9 +108,9 @@ export default function DashboardPage() {
         </div>
 
         {/* Therapist Capacities */}
-        <div className="bg-surface rounded-xl shadow-sm border border-border-main">
+        <div className="bg-surface rounded-xl shadow-md border border-border-main">
           <div className="p-6 border-b border-border-main">
-            <h2 className="text-lg font-bold text-text-primary">Today's Capacity</h2>
+            <h2 className="text-lg font-fraunces font-bold text-text-primary">Today's Capacity</h2>
           </div>
           <div className="p-6 space-y-6">
             {stats.therapist_capacities.length > 0 ? (
@@ -127,7 +127,7 @@ export default function DashboardPage() {
                   <div key={cap.therapist_id}>
                     <div className="flex justify-between items-center mb-2">
                       <span className="font-medium text-text-primary">{cap.therapist_name}</span>
-                      <span className="text-sm font-bold text-text-secondary">
+                      <span className="text-sm font-bold text-text-secondary font-mono">
                         {cap.booked_slots} / {cap.total_slots} booked
                       </span>
                     </div>

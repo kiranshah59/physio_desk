@@ -23,6 +23,8 @@ export default function AppointmentsPage() {
   const [patients, setPatients] = useState<any[]>([]);
   const [therapists, setTherapists] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [search, setSearch] = useState('');
+  const [filter, setFilter] = useState('all');
   
   // Modal state
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -93,7 +95,7 @@ export default function AppointmentsPage() {
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
-        <h1 className="text-2xl font-bold text-text-primary">Appointments</h1>
+        <h1 className="text-2xl font-fraunces font-bold text-text-primary">Appointments</h1>
         <button
           onClick={() => setIsModalOpen(true)}
           className="bg-primary text-surface px-4 py-2 rounded-lg hover:opacity-90 flex items-center gap-2 font-medium transition-colors"
@@ -103,7 +105,30 @@ export default function AppointmentsPage() {
         </button>
       </div>
 
-      <div className="bg-surface rounded-xl shadow-sm border border-border-main overflow-hidden">
+      <div className="bg-surface p-4 rounded-xl shadow-md border border-border-main flex items-center gap-3">
+        <div className="w-5 h-5 text-text-secondary">🔍</div>
+        <input
+          type="text"
+          placeholder="Search appointments by patient..."
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          className="flex-1 outline-none text-text-primary bg-transparent"
+        />
+        <div className="border-l border-border-main pl-3">
+          <select 
+            value={filter} 
+            onChange={(e) => setFilter(e.target.value)}
+            className="bg-bg-main text-text-secondary text-sm px-3 py-1.5 rounded-lg border border-border-main outline-none focus:ring-2 focus:ring-primary"
+          >
+            <option value="all">All Statuses</option>
+            <option value="scheduled">Scheduled</option>
+            <option value="completed">Completed</option>
+            <option value="cancelled">Cancelled</option>
+          </select>
+        </div>
+      </div>
+
+      <div className="bg-surface rounded-xl shadow-md border border-border-main overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-left">
             <thead className="bg-bg-main text-text-secondary text-sm border-b border-border-main">
@@ -128,7 +153,7 @@ export default function AppointmentsPage() {
                         <Calendar className="w-4 h-4 text-text-secondary" />
                         {format(parseISO(apt.date), 'MMM dd, yyyy')}
                       </div>
-                      <div className="text-sm text-text-secondary flex items-center gap-2 mt-1">
+                      <div className="text-sm text-text-secondary flex items-center gap-2 mt-1 font-mono">
                         <Clock className="w-4 h-4" />
                         {apt.start_time.substring(0,5)} - {apt.end_time.substring(0,5)}
                       </div>
@@ -136,11 +161,11 @@ export default function AppointmentsPage() {
                     <td className="px-6 py-4 font-medium">
                       <div className="flex items-center gap-2">
                         <User className="w-4 h-4 text-text-secondary" />
-                        {apt.patient?.name || `ID: ${apt.patient_id}`}
+                        {apt.patient?.name || <span className="font-mono">ID: {apt.patient_id}</span>}
                       </div>
                     </td>
                     <td className="px-6 py-4 text-text-secondary">
-                      {apt.therapist?.name || `ID: ${apt.therapist_id}`}
+                      {apt.therapist?.name || <span className="font-mono">ID: {apt.therapist_id}</span>}
                     </td>
                     <td className="px-6 py-4">
                       <span className={`px-3 py-1 rounded-full text-xs font-medium border ${getStatusColor(apt.status)}`}>
@@ -176,7 +201,7 @@ export default function AppointmentsPage() {
         <div className="fixed inset-0 bg-secondary/50 flex items-center justify-center z-50 p-4">
           <div className="bg-surface rounded-xl shadow-xl w-full max-w-lg overflow-hidden border border-border-main">
             <div className="px-6 py-4 border-b border-border-main flex justify-between items-center bg-bg-main">
-              <h3 className="text-lg font-bold text-text-primary">Book Appointment</h3>
+              <h3 className="text-lg font-fraunces font-bold text-text-primary">Book Appointment</h3>
               <button onClick={() => setIsModalOpen(false)} className="text-text-secondary hover:text-text-primary text-xl font-bold">
                 <X className="w-5 h-5" />
               </button>
