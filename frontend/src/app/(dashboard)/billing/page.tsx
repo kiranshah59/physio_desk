@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import api from '@/lib/axios';
 import { useAuth } from '@/contexts/AuthContext';
-import { Plus, DollarSign, User, X } from 'lucide-react';
+import { Plus, DollarSign, User, X, Edit2, Trash2 } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
 
 interface Invoice {
@@ -11,6 +11,7 @@ interface Invoice {
   patient_id: number;
   service_package: string;
   amount: number;
+  discount: number;
   status: string;
   payment_method: string | null;
   created_at: string;
@@ -27,9 +28,11 @@ export default function BillingPage() {
   
   // Modal state
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [formData, setFormData] = useState({
-    patient_id: '', service_package: '', amount: '', status: 'due', payment_method: ''
-  });
+  const [editingInvoiceId, setEditingInvoiceId] = useState<number | null>(null);
+  const defaultForm = {
+    patient_id: '', service_package: '', amount: '', discount: '0', status: 'due', payment_method: ''
+  };
+  const [formData, setFormData] = useState(defaultForm);
 
   useEffect(() => {
     fetchInvoices();
@@ -56,19 +59,51 @@ export default function BillingPage() {
     }
   };
 
+  const openAddModal = () => {
+    setEditingInvoiceId(null);
+    setFormData(defaultForm);
+    setIsModalOpen(true);
+  };
+
+  const openEditModal = (invoice: Invoice) => {
+    setEditingInvoiceId(invoice.id);
+    setFormData({
+      patient_id: invoice.patient_id.toString(),
+      service_package: invoice.service_package,
+      amount: invoice.amount.toString(),
+      discount: invoice.discount.toString(),
+      status: invoice.status,
+      payment_method: invoice.payment_method || ''
+    });
+    setIsModalOpen(true);
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      await api.post('/billing/', {
+      const payload = {
         ...formData,
         patient_id: parseInt(formData.patient_id),
         amount: parseFloat(formData.amount),
+        discount: parseFloat(formData.discount || '0'),
         payment_method: formData.payment_method || null
-      });
+      };
+
+      if (editingInvoiceId) {
+        await api.put(`/billing/${editingInvoiceId}`, {
+          status: payload.status,
+          payment_method: payload.payment_method,
+          discount: payload.discount,
+          amount: payload.amount
+        });
+      } else {
+        await api.post('/billing/', payload);
+      }
       setIsModalOpen(false);
+      setFormData(defaultForm);
       fetchInvoices();
     } catch (err: any) {
-      alert(err.response?.data?.detail || 'Failed to create invoice');
+      alert(err.response?.data?.detail || 'Failed to save invoice');
     }
   };
 
@@ -78,6 +113,16 @@ export default function BillingPage() {
       fetchInvoices();
     } catch (err) {
       console.error('Failed to update status', err);
+    }
+  };
+
+  const handleDelete = async (id: number) => {
+    if (!confirm('Are you sure you want to void this invoice?')) return;
+    try {
+      await api.delete(`/billing/${id}`);
+      fetchInvoices();
+    } catch (err) {
+      console.error('Failed to delete invoice', err);
     }
   };
 
@@ -96,7 +141,7 @@ export default function BillingPage() {
         <h1 className="text-2xl font-fraunces font-bold text-text-primary">Billing & Invoices</h1>
         {user?.role === 'admin' && (
           <button
-            onClick={() => setIsModalOpen(true)}
+            onClick={openAddModal}
             className="bg-primary text-surface px-4 py-2 rounded-lg hover:opacity-90 flex items-center gap-2 font-medium transition-colors"
           >
             <Plus className="w-5 h-5" />
@@ -138,20 +183,23 @@ export default function BillingPage() {
                 <th className="px-6 py-4 font-medium">Service Package</th>
                 <th className="px-6 py-4 font-medium">Amount</th>
                 <th className="px-6 py-4 font-medium">Status</th>
-                <th className="px-6 py-4 font-medium">Date</th>
-                {user?.role === 'admin' && <th className="px-6 py-4 font-medium text-right">Actions</th>}
+                <th className="px-6 py-4 font-medium text-right">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-border-main text-text-primary">
               {loading ? (
                 <tr>
-                  <td colSpan={7} className="px-6 py-8 text-center text-text-secondary">Loading invoices...</td>
+                  <td colSpan={6} className="px-6 py-8 text-center text-text-secondary">Loading invoices...</td>
                 </tr>
               ) : invoices.length > 0 ? (
                 invoices.map((inv) => (
                   <tr key={inv.id} className="hover:bg-bg-main/50 transition-colors">
                     <td className="px-6 py-4 font-medium text-text-primary font-mono">
                       INV-{inv.id.toString().padStart(4, '0')}
+                      <br/>
+                      <span className="text-xs text-text-secondary font-sans font-normal">
+                        {format(parseISO(inv.created_at), 'MMM dd, yyyy')}
+                      </span>
                     </td>
                     <td className="px-6 py-4 font-medium">
                       <div className="flex items-center gap-2">
@@ -161,8 +209,9 @@ export default function BillingPage() {
                     </td>
                     <td className="px-6 py-4 text-text-secondary">
                       {inv.service_package}
+                      {inv.discount > 0 && <span className="block text-xs text-status-success mt-1">-${inv.discount.toFixed(2)} discount</span>}
                     </td>
-                    <td className="px-6 py-4 font-bold text-text-primary font-mono">
+                    <td className="px-6 py-4 font-bold text-text-primary font-mono text-lg">
                       ${inv.amount.toFixed(2)}
                     </td>
                     <td className="px-6 py-4">
@@ -170,23 +219,30 @@ export default function BillingPage() {
                         {inv.status.toUpperCase()}
                       </span>
                     </td>
-                    <td className="px-6 py-4 text-text-secondary text-sm">
-                      {format(parseISO(inv.created_at), 'MMM dd, yyyy')}
-                    </td>
-                    {user?.role === 'admin' && (
-                      <td className="px-6 py-4 text-right">
+                    <td className="px-6 py-4 text-right">
+                      <div className="flex items-center justify-end gap-2">
                         {inv.status === 'due' && (
-                          <button onClick={() => handleStatusUpdate(inv.id, 'paid')} className="text-xs bg-status-success-soft text-status-success hover:bg-status-success hover:text-surface px-3 py-1 rounded-md transition-colors font-medium border border-status-success/20 flex items-center gap-1 ml-auto">
+                          <button onClick={() => handleStatusUpdate(inv.id, 'paid')} className="text-xs bg-status-success-soft text-status-success hover:bg-status-success hover:text-surface px-3 py-1.5 rounded-md transition-colors font-medium border border-status-success/20 flex items-center gap-1">
                             <DollarSign className="w-3 h-3" /> Mark Paid
                           </button>
                         )}
-                      </td>
-                    )}
+                        {user?.role === 'admin' && (
+                          <>
+                            <button onClick={() => openEditModal(inv)} className="text-text-secondary hover:text-primary p-1.5 transition-colors" title="Edit">
+                              <Edit2 className="w-4 h-4" />
+                            </button>
+                            <button onClick={() => handleDelete(inv.id)} className="text-text-secondary hover:text-status-error p-1.5 transition-colors" title="Void Invoice">
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          </>
+                        )}
+                      </div>
+                    </td>
                   </tr>
                 ))
               ) : (
                 <tr>
-                  <td colSpan={7} className="px-6 py-8 text-center text-text-secondary">No invoices found.</td>
+                  <td colSpan={6} className="px-6 py-8 text-center text-text-secondary">No invoices found.</td>
                 </tr>
               )}
             </tbody>
@@ -194,12 +250,14 @@ export default function BillingPage() {
         </div>
       </div>
 
-      {/* Create Invoice Modal */}
+      {/* Create/Edit Invoice Modal */}
       {isModalOpen && user?.role === 'admin' && (
         <div className="fixed inset-0 bg-secondary/50 flex items-center justify-center z-50 p-4">
           <div className="bg-surface rounded-xl shadow-xl w-full max-w-lg overflow-hidden border border-border-main">
             <div className="px-6 py-4 border-b border-border-main flex justify-between items-center bg-bg-main">
-              <h3 className="text-lg font-fraunces font-bold text-text-primary">Create Invoice</h3>
+              <h3 className="text-lg font-fraunces font-bold text-text-primary">
+                {editingInvoiceId ? 'Edit Invoice' : 'Create Invoice'}
+              </h3>
               <button onClick={() => setIsModalOpen(false)} className="text-text-secondary hover:text-text-primary text-xl font-bold">
                 <X className="w-5 h-5" />
               </button>
@@ -207,7 +265,7 @@ export default function BillingPage() {
             <form onSubmit={handleSubmit} className="p-6 space-y-4">
               <div>
                 <label className="block text-sm font-medium text-text-primary mb-1">Patient *</label>
-                <select required value={formData.patient_id} onChange={(e) => setFormData({...formData, patient_id: e.target.value})} className="w-full px-3 py-2 bg-surface text-text-primary border border-border-main rounded-lg focus:ring-2 focus:ring-primary outline-none">
+                <select disabled={!!editingInvoiceId} required value={formData.patient_id} onChange={(e) => setFormData({...formData, patient_id: e.target.value})} className={`w-full px-3 py-2 text-text-primary border border-border-main rounded-lg outline-none ${editingInvoiceId ? 'bg-bg-main cursor-not-allowed' : 'bg-surface focus:ring-2 focus:ring-primary'}`}>
                   <option value="">Select Patient...</option>
                   {patients.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
                 </select>
@@ -215,7 +273,7 @@ export default function BillingPage() {
               
               <div>
                 <label className="block text-sm font-medium text-text-primary mb-1">Service / Package *</label>
-                <input required type="text" placeholder="e.g. Standard Rehab Package" value={formData.service_package} onChange={(e) => setFormData({...formData, service_package: e.target.value})} className="w-full px-3 py-2 bg-surface text-text-primary border border-border-main rounded-lg focus:ring-2 focus:ring-primary outline-none" />
+                <input disabled={!!editingInvoiceId} required type="text" placeholder="e.g. Standard Rehab Package" value={formData.service_package} onChange={(e) => setFormData({...formData, service_package: e.target.value})} className={`w-full px-3 py-2 text-text-primary border border-border-main rounded-lg outline-none ${editingInvoiceId ? 'bg-bg-main cursor-not-allowed' : 'bg-surface focus:ring-2 focus:ring-primary'}`} />
               </div>
 
               <div className="grid grid-cols-2 gap-4">
@@ -224,29 +282,37 @@ export default function BillingPage() {
                   <input required type="number" step="0.01" min="0" value={formData.amount} onChange={(e) => setFormData({...formData, amount: e.target.value})} className="w-full px-3 py-2 bg-surface text-text-primary border border-border-main rounded-lg focus:ring-2 focus:ring-primary outline-none" />
                 </div>
                 <div>
+                  <label className="block text-sm font-medium text-text-primary mb-1">Discount ($)</label>
+                  <input type="number" step="0.01" min="0" value={formData.discount} onChange={(e) => setFormData({...formData, discount: e.target.value})} className="w-full px-3 py-2 bg-surface text-text-primary border border-border-main rounded-lg focus:ring-2 focus:ring-primary outline-none" />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
                   <label className="block text-sm font-medium text-text-primary mb-1">Status</label>
                   <select required value={formData.status} onChange={(e) => setFormData({...formData, status: e.target.value})} className="w-full px-3 py-2 bg-surface text-text-primary border border-border-main rounded-lg focus:ring-2 focus:ring-primary outline-none">
                     <option value="due">Due</option>
                     <option value="paid">Paid</option>
                   </select>
                 </div>
+                {formData.status === 'paid' && (
+                  <div>
+                    <label className="block text-sm font-medium text-text-primary mb-1">Payment Method</label>
+                    <select value={formData.payment_method} onChange={(e) => setFormData({...formData, payment_method: e.target.value})} className="w-full px-3 py-2 bg-surface text-text-primary border border-border-main rounded-lg focus:ring-2 focus:ring-primary outline-none">
+                      <option value="">Select Method...</option>
+                      <option value="Credit Card">Credit Card</option>
+                      <option value="Cash">Cash</option>
+                      <option value="Bank Transfer">Bank Transfer</option>
+                    </select>
+                  </div>
+                )}
               </div>
-
-              {formData.status === 'paid' && (
-                <div>
-                  <label className="block text-sm font-medium text-text-primary mb-1">Payment Method</label>
-                  <select value={formData.payment_method} onChange={(e) => setFormData({...formData, payment_method: e.target.value})} className="w-full px-3 py-2 bg-surface text-text-primary border border-border-main rounded-lg focus:ring-2 focus:ring-primary outline-none">
-                    <option value="">Select Method...</option>
-                    <option value="Credit Card">Credit Card</option>
-                    <option value="Cash">Cash</option>
-                    <option value="Bank Transfer">Bank Transfer</option>
-                  </select>
-                </div>
-              )}
               
               <div className="pt-4 flex justify-end gap-3">
                 <button type="button" onClick={() => setIsModalOpen(false)} className="px-4 py-2 text-text-secondary hover:bg-bg-main border border-transparent hover:border-border-main rounded-lg font-medium transition-colors">Cancel</button>
-                <button type="submit" className="px-4 py-2 bg-primary hover:opacity-90 text-surface rounded-lg font-medium transition-colors">Create Invoice</button>
+                <button type="submit" className="px-4 py-2 bg-primary hover:opacity-90 text-surface rounded-lg font-medium transition-colors">
+                  {editingInvoiceId ? 'Update Invoice' : 'Create Invoice'}
+                </button>
               </div>
             </form>
           </div>

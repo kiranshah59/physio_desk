@@ -1,8 +1,9 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import api from '@/lib/axios';
-import { Plus, Search, Edit2, Trash2 } from 'lucide-react';
+import { Plus, Search, Edit2, Trash2, Eye } from 'lucide-react';
 
 interface Patient {
   id: number;
@@ -10,10 +11,13 @@ interface Patient {
   phone: string;
   age: number | null;
   gender: string | null;
+  address: string | null;
   condition: string | null;
+  package: string | null;
 }
 
 export default function PatientsPage() {
+  const router = useRouter();
   const [patients, setPatients] = useState<Patient[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
@@ -21,7 +25,10 @@ export default function PatientsPage() {
   
   // Modal state
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [formData, setFormData] = useState({ name: '', phone: '', age: '', gender: '', condition: '' });
+  const [editingPatientId, setEditingPatientId] = useState<number | null>(null);
+  
+  const defaultForm = { name: '', phone: '', age: '', gender: '', address: '', condition: '', package: '' };
+  const [formData, setFormData] = useState(defaultForm);
 
   const fetchPatients = async (query = '') => {
     try {
@@ -43,18 +50,44 @@ export default function PatientsPage() {
     fetchPatients(e.target.value);
   };
 
+  const openAddModal = () => {
+    setEditingPatientId(null);
+    setFormData(defaultForm);
+    setIsModalOpen(true);
+  };
+
+  const openEditModal = (patient: Patient) => {
+    setEditingPatientId(patient.id);
+    setFormData({
+      name: patient.name,
+      phone: patient.phone,
+      age: patient.age ? patient.age.toString() : '',
+      gender: patient.gender || '',
+      address: patient.address || '',
+      condition: patient.condition || '',
+      package: patient.package || ''
+    });
+    setIsModalOpen(true);
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    const payload = {
+      ...formData,
+      age: formData.age ? parseInt(formData.age) : null,
+    };
+    
     try {
-      await api.post('/patients/', {
-        ...formData,
-        age: formData.age ? parseInt(formData.age) : null,
-      });
+      if (editingPatientId) {
+        await api.put(`/patients/${editingPatientId}`, payload);
+      } else {
+        await api.post('/patients/', payload);
+      }
       setIsModalOpen(false);
-      setFormData({ name: '', phone: '', age: '', gender: '', condition: '' });
+      setFormData(defaultForm);
       fetchPatients(search);
     } catch (err) {
-      console.error('Failed to create patient', err);
+      console.error('Failed to save patient', err);
     }
   };
 
@@ -73,7 +106,7 @@ export default function PatientsPage() {
       <div className="flex justify-between items-center">
         <h1 className="text-2xl font-fraunces font-bold text-text-primary">Patients Directory</h1>
         <button
-          onClick={() => setIsModalOpen(true)}
+          onClick={openAddModal}
           className="bg-primary text-surface px-4 py-2 rounded-lg hover:opacity-90 flex items-center gap-2 font-medium transition-colors"
         >
           <Plus className="w-5 h-5" />
@@ -111,7 +144,7 @@ export default function PatientsPage() {
                 <th className="px-6 py-4 font-medium">Name</th>
                 <th className="px-6 py-4 font-medium">Contact</th>
                 <th className="px-6 py-4 font-medium">Details</th>
-                <th className="px-6 py-4 font-medium">Condition</th>
+                <th className="px-6 py-4 font-medium">Condition & Package</th>
                 <th className="px-6 py-4 font-medium text-right">Actions</th>
               </tr>
             </thead>
@@ -123,18 +156,31 @@ export default function PatientsPage() {
               ) : patients.length > 0 ? (
                 patients.map((patient) => (
                   <tr key={patient.id} className="hover:bg-bg-main/50 transition-colors">
-                    <td className="px-6 py-4 font-medium text-text-primary">{patient.name}</td>
-                    <td className="px-6 py-4 text-text-secondary">{patient.phone}</td>
-                    <td className="px-6 py-4 text-text-secondary">
+                    <td className="px-6 py-4 font-medium text-text-primary">
+                      <div 
+                        className="cursor-pointer hover:text-primary transition-colors flex items-center gap-2"
+                        onClick={() => router.push(`/patients/${patient.id}`)}
+                      >
+                        {patient.name}
+                        <Eye className="w-3 h-3 text-text-secondary" />
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 text-text-secondary text-sm">{patient.phone}</td>
+                    <td className="px-6 py-4 text-text-secondary text-sm">
                       {patient.age ? `${patient.age} y/o` : 'N/A'}{patient.gender ? `, ${patient.gender}` : ''}
                     </td>
                     <td className="px-6 py-4">
-                      <span className="bg-status-info-soft text-status-info px-3 py-1 rounded-full text-xs font-medium border border-status-info/20">
-                        {patient.condition || 'N/A'}
-                      </span>
+                      <div className="flex flex-col items-start gap-1">
+                        <span className="bg-status-info-soft text-status-info px-3 py-1 rounded-full text-xs font-medium border border-status-info/20">
+                          {patient.condition || 'N/A'}
+                        </span>
+                        {patient.package && (
+                          <span className="text-xs text-text-secondary">{patient.package}</span>
+                        )}
+                      </div>
                     </td>
                     <td className="px-6 py-4 text-right">
-                      <button className="text-text-secondary hover:text-primary p-2 transition-colors" title="Edit">
+                      <button onClick={() => openEditModal(patient)} className="text-text-secondary hover:text-primary p-2 transition-colors" title="Edit">
                         <Edit2 className="w-4 h-4" />
                       </button>
                       <button onClick={() => handleDelete(patient.id)} className="text-text-secondary hover:text-status-error p-2 transition-colors" title="Delete">
@@ -153,23 +199,28 @@ export default function PatientsPage() {
         </div>
       </div>
 
-      {/* Add Patient Modal */}
+      {/* Add/Edit Patient Modal */}
       {isModalOpen && (
         <div className="fixed inset-0 bg-secondary/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-surface rounded-xl shadow-xl w-full max-w-md overflow-hidden border border-border-main">
+          <div className="bg-surface rounded-xl shadow-xl w-full max-w-lg overflow-hidden border border-border-main">
             <div className="px-6 py-4 border-b border-border-main flex justify-between items-center bg-bg-main">
-              <h3 className="text-lg font-fraunces font-bold text-text-primary">Add New Patient</h3>
+              <h3 className="text-lg font-fraunces font-bold text-text-primary">
+                {editingPatientId ? 'Edit Patient' : 'Add New Patient'}
+              </h3>
               <button onClick={() => setIsModalOpen(false)} className="text-text-secondary hover:text-text-primary text-xl font-bold">&times;</button>
             </div>
-            <form onSubmit={handleSubmit} className="p-6 space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-text-primary mb-1">Full Name *</label>
-                <input required type="text" value={formData.name} onChange={(e) => setFormData({...formData, name: e.target.value})} className="w-full px-3 py-2 bg-surface text-text-primary border border-border-main rounded-lg focus:ring-2 focus:ring-primary outline-none" />
+            <form onSubmit={handleSubmit} className="p-6 space-y-4 max-h-[70vh] overflow-y-auto">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-text-primary mb-1">Full Name *</label>
+                  <input required type="text" value={formData.name} onChange={(e) => setFormData({...formData, name: e.target.value})} className="w-full px-3 py-2 bg-surface text-text-primary border border-border-main rounded-lg focus:ring-2 focus:ring-primary outline-none" />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-text-primary mb-1">Phone Number *</label>
+                  <input required type="text" value={formData.phone} onChange={(e) => setFormData({...formData, phone: e.target.value})} className="w-full px-3 py-2 bg-surface text-text-primary border border-border-main rounded-lg focus:ring-2 focus:ring-primary outline-none" />
+                </div>
               </div>
-              <div>
-                <label className="block text-sm font-medium text-text-primary mb-1">Phone Number *</label>
-                <input required type="text" value={formData.phone} onChange={(e) => setFormData({...formData, phone: e.target.value})} className="w-full px-3 py-2 bg-surface text-text-primary border border-border-main rounded-lg focus:ring-2 focus:ring-primary outline-none" />
-              </div>
+              
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-text-primary mb-1">Age</label>
@@ -185,13 +236,28 @@ export default function PatientsPage() {
                   </select>
                 </div>
               </div>
+
               <div>
-                <label className="block text-sm font-medium text-text-primary mb-1">Primary Condition</label>
-                <input type="text" value={formData.condition} onChange={(e) => setFormData({...formData, condition: e.target.value})} placeholder="e.g. Lower Back Pain" className="w-full px-3 py-2 bg-surface text-text-primary border border-border-main rounded-lg focus:ring-2 focus:ring-primary outline-none" />
+                <label className="block text-sm font-medium text-text-primary mb-1">Address</label>
+                <input type="text" value={formData.address} onChange={(e) => setFormData({...formData, address: e.target.value})} className="w-full px-3 py-2 bg-surface text-text-primary border border-border-main rounded-lg focus:ring-2 focus:ring-primary outline-none" />
               </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-text-primary mb-1">Primary Condition</label>
+                  <input type="text" value={formData.condition} onChange={(e) => setFormData({...formData, condition: e.target.value})} placeholder="e.g. Lower Back Pain" className="w-full px-3 py-2 bg-surface text-text-primary border border-border-main rounded-lg focus:ring-2 focus:ring-primary outline-none" />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-text-primary mb-1">Treatment Package</label>
+                  <input type="text" value={formData.package} onChange={(e) => setFormData({...formData, package: e.target.value})} placeholder="e.g. Standard Rehab" className="w-full px-3 py-2 bg-surface text-text-primary border border-border-main rounded-lg focus:ring-2 focus:ring-primary outline-none" />
+                </div>
+              </div>
+              
               <div className="pt-4 flex justify-end gap-3">
                 <button type="button" onClick={() => setIsModalOpen(false)} className="px-4 py-2 text-text-secondary hover:bg-bg-main border border-transparent hover:border-border-main rounded-lg font-medium transition-colors">Cancel</button>
-                <button type="submit" className="px-4 py-2 bg-primary hover:opacity-90 text-surface rounded-lg font-medium transition-colors">Save Patient</button>
+                <button type="submit" className="px-4 py-2 bg-primary hover:opacity-90 text-surface rounded-lg font-medium transition-colors">
+                  {editingPatientId ? 'Update Patient' : 'Save Patient'}
+                </button>
               </div>
             </form>
           </div>

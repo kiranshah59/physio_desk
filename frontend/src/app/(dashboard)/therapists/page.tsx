@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import api from '@/lib/axios';
 import { useAuth } from '@/contexts/AuthContext';
-import { Plus, Edit2, Trash2 } from 'lucide-react';
+import { Plus, Edit2, Trash2, CalendarX, X } from 'lucide-react';
 
 interface Therapist {
   id: number;
@@ -14,6 +14,15 @@ interface Therapist {
   start_time: string;
   end_time: string;
   slot_duration_minutes: number;
+}
+
+interface Override {
+  id: number;
+  therapist_id: number;
+  date: string;
+  is_off: boolean;
+  start_time: string | null;
+  end_time: string | null;
 }
 
 const WEEKDAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
@@ -27,14 +36,23 @@ export default function TherapistsPage() {
   const [search, setSearch] = useState('');
   const [filter, setFilter] = useState('all');
   
-  // Modal state
+  // Therapist Modal state
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [formData, setFormData] = useState({ 
+  const [editingTherapistId, setEditingTherapistId] = useState<number | null>(null);
+  const defaultForm = { 
     name: '', specialty: '', start_time: '09:00:00', end_time: '17:00:00', slot_duration_minutes: 30, working_days: [1,2,3,4,5] 
+  };
+  const [formData, setFormData] = useState(defaultForm);
+
+  // Override Modal state
+  const [isOverrideModalOpen, setIsOverrideModalOpen] = useState(false);
+  const [activeOverrideTherapist, setActiveOverrideTherapist] = useState<Therapist | null>(null);
+  const [overrides, setOverrides] = useState<Override[]>([]);
+  const [overrideForm, setOverrideForm] = useState({
+    date: '', is_off: true, start_time: '09:00:00', end_time: '12:00:00'
   });
 
   useEffect(() => {
-    // Role-based UI logic: kick out staff members
     if (user && user.role !== 'admin') {
       router.push('/');
       return;
@@ -53,14 +71,37 @@ export default function TherapistsPage() {
     }
   };
 
+  const openAddModal = () => {
+    setEditingTherapistId(null);
+    setFormData(defaultForm);
+    setIsModalOpen(true);
+  };
+
+  const openEditModal = (therapist: Therapist) => {
+    setEditingTherapistId(therapist.id);
+    setFormData({
+      name: therapist.name,
+      specialty: therapist.specialty,
+      start_time: therapist.start_time,
+      end_time: therapist.end_time,
+      slot_duration_minutes: therapist.slot_duration_minutes,
+      working_days: therapist.working_days
+    });
+    setIsModalOpen(true);
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      await api.post('/therapists/', formData);
+      if (editingTherapistId) {
+        await api.put(`/therapists/${editingTherapistId}`, formData);
+      } else {
+        await api.post('/therapists/', formData);
+      }
       setIsModalOpen(false);
       fetchTherapists();
     } catch (err) {
-      console.error('Failed to create therapist', err);
+      console.error('Failed to save therapist', err);
       alert('Failed to save therapist. Ensure times are in HH:MM:SS format.');
     }
   };
@@ -75,6 +116,53 @@ export default function TherapistsPage() {
     }
   };
 
+  // --- Overrides Logic ---
+
+  const openOverrideModal = async (therapist: Therapist) => {
+    setActiveOverrideTherapist(therapist);
+    setOverrideForm({ date: '', is_off: true, start_time: '09:00:00', end_time: '12:00:00' });
+    setIsOverrideModalOpen(true);
+    fetchOverrides(therapist.id);
+  };
+
+  const fetchOverrides = async (therapistId: number) => {
+    try {
+      const res = await api.get(`/therapists/${therapistId}/overrides`);
+      setOverrides(res.data);
+    } catch (err) {
+      console.error('Failed to fetch overrides', err);
+    }
+  };
+
+  const handleOverrideSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!activeOverrideTherapist) return;
+    
+    try {
+      await api.post(`/therapists/${activeOverrideTherapist.id}/overrides`, {
+        ...overrideForm,
+        start_time: overrideForm.is_off ? null : overrideForm.start_time,
+        end_time: overrideForm.is_off ? null : overrideForm.end_time,
+      });
+      fetchOverrides(activeOverrideTherapist.id);
+      setOverrideForm({ date: '', is_off: true, start_time: '09:00:00', end_time: '12:00:00' });
+    } catch (err) {
+      console.error('Failed to create override', err);
+      alert('Failed to save override.');
+    }
+  };
+
+  const deleteOverride = async (overrideId: number) => {
+    try {
+      await api.delete(`/therapists/overrides/${overrideId}`);
+      if (activeOverrideTherapist) {
+        fetchOverrides(activeOverrideTherapist.id);
+      }
+    } catch (err) {
+      console.error('Failed to delete override', err);
+    }
+  };
+
   if (user?.role !== 'admin') return null;
 
   return (
@@ -85,7 +173,7 @@ export default function TherapistsPage() {
           <p className="text-sm text-text-secondary mt-1">Admin access only</p>
         </div>
         <button
-          onClick={() => setIsModalOpen(true)}
+          onClick={openAddModal}
           className="bg-primary text-surface px-4 py-2 rounded-lg hover:opacity-90 flex items-center gap-2 font-medium transition-colors"
         >
           <Plus className="w-5 h-5" />
@@ -124,14 +212,13 @@ export default function TherapistsPage() {
                 <th className="px-6 py-4 font-medium">Specialty</th>
                 <th className="px-6 py-4 font-medium">Working Days</th>
                 <th className="px-6 py-4 font-medium">Shift</th>
-                <th className="px-6 py-4 font-medium">Slot Length</th>
                 <th className="px-6 py-4 font-medium text-right">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-border-main text-text-primary">
               {loading ? (
                 <tr>
-                  <td colSpan={6} className="px-6 py-8 text-center text-text-secondary">Loading therapists...</td>
+                  <td colSpan={5} className="px-6 py-8 text-center text-text-secondary">Loading therapists...</td>
                 </tr>
               ) : therapists.length > 0 ? (
                 therapists.map((t) => (
@@ -146,13 +233,14 @@ export default function TherapistsPage() {
                       {t.working_days.map(d => WEEKDAYS[d-1].substring(0,3)).join(', ')}
                     </td>
                     <td className="px-6 py-4 text-text-secondary text-sm font-mono">
-                      {t.start_time.substring(0,5)} - {t.end_time.substring(0,5)}
-                    </td>
-                    <td className="px-6 py-4 text-text-secondary text-sm font-mono">
-                      {t.slot_duration_minutes} min
+                      {t.start_time.substring(0,5)} - {t.end_time.substring(0,5)}<br/>
+                      <span className="text-xs text-text-secondary">{t.slot_duration_minutes}m slots</span>
                     </td>
                     <td className="px-6 py-4 text-right">
-                      <button className="text-text-secondary hover:text-primary p-2 transition-colors" title="Edit">
+                      <button onClick={() => openOverrideModal(t)} className="text-text-secondary hover:text-tertiary p-2 transition-colors" title="Manage Schedule Overrides">
+                        <CalendarX className="w-4 h-4" />
+                      </button>
+                      <button onClick={() => openEditModal(t)} className="text-text-secondary hover:text-primary p-2 transition-colors" title="Edit">
                         <Edit2 className="w-4 h-4" />
                       </button>
                       <button onClick={() => handleDelete(t.id)} className="text-text-secondary hover:text-status-error p-2 transition-colors" title="Delete">
@@ -163,7 +251,7 @@ export default function TherapistsPage() {
                 ))
               ) : (
                 <tr>
-                  <td colSpan={6} className="px-6 py-8 text-center text-text-secondary">No therapists found.</td>
+                  <td colSpan={5} className="px-6 py-8 text-center text-text-secondary">No therapists found.</td>
                 </tr>
               )}
             </tbody>
@@ -171,12 +259,14 @@ export default function TherapistsPage() {
         </div>
       </div>
 
-      {/* Add Therapist Modal */}
+      {/* Add/Edit Therapist Modal */}
       {isModalOpen && (
         <div className="fixed inset-0 bg-secondary/50 flex items-center justify-center z-50 p-4">
           <div className="bg-surface rounded-xl shadow-xl w-full max-w-lg overflow-hidden border border-border-main">
             <div className="px-6 py-4 border-b border-border-main flex justify-between items-center bg-bg-main">
-              <h3 className="text-lg font-fraunces font-bold text-text-primary">Add New Therapist</h3>
+              <h3 className="text-lg font-fraunces font-bold text-text-primary">
+                {editingTherapistId ? 'Edit Therapist' : 'Add New Therapist'}
+              </h3>
               <button onClick={() => setIsModalOpen(false)} className="text-text-secondary hover:text-text-primary text-xl font-bold">&times;</button>
             </div>
             <form onSubmit={handleSubmit} className="p-6 space-y-4">
@@ -219,12 +309,12 @@ export default function TherapistsPage() {
 
               <div className="grid grid-cols-3 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-text-primary mb-1">Start Time (HH:MM:SS)</label>
-                  <input required type="text" placeholder="09:00:00" value={formData.start_time} onChange={(e) => setFormData({...formData, start_time: e.target.value})} className="w-full px-3 py-2 bg-surface text-text-primary border border-border-main rounded-lg focus:ring-2 focus:ring-primary outline-none" />
+                  <label className="block text-sm font-medium text-text-primary mb-1">Start Time</label>
+                  <input required type="time" value={formData.start_time} onChange={(e) => setFormData({...formData, start_time: e.target.value+':00'})} className="w-full px-3 py-2 bg-surface text-text-primary border border-border-main rounded-lg focus:ring-2 focus:ring-primary outline-none" />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-text-primary mb-1">End Time (HH:MM:SS)</label>
-                  <input required type="text" placeholder="17:00:00" value={formData.end_time} onChange={(e) => setFormData({...formData, end_time: e.target.value})} className="w-full px-3 py-2 bg-surface text-text-primary border border-border-main rounded-lg focus:ring-2 focus:ring-primary outline-none" />
+                  <label className="block text-sm font-medium text-text-primary mb-1">End Time</label>
+                  <input required type="time" value={formData.end_time} onChange={(e) => setFormData({...formData, end_time: e.target.value+':00'})} className="w-full px-3 py-2 bg-surface text-text-primary border border-border-main rounded-lg focus:ring-2 focus:ring-primary outline-none" />
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-text-primary mb-1">Slot Duration</label>
@@ -239,9 +329,96 @@ export default function TherapistsPage() {
               
               <div className="pt-4 flex justify-end gap-3">
                 <button type="button" onClick={() => setIsModalOpen(false)} className="px-4 py-2 text-text-secondary hover:bg-bg-main border border-transparent hover:border-border-main rounded-lg font-medium transition-colors">Cancel</button>
-                <button type="submit" className="px-4 py-2 bg-primary hover:opacity-90 text-surface rounded-lg font-medium transition-colors">Save Therapist</button>
+                <button type="submit" className="px-4 py-2 bg-primary hover:opacity-90 text-surface rounded-lg font-medium transition-colors">
+                  {editingTherapistId ? 'Update Therapist' : 'Save Therapist'}
+                </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Overrides Modal */}
+      {isOverrideModalOpen && activeOverrideTherapist && (
+        <div className="fixed inset-0 bg-secondary/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-surface rounded-xl shadow-xl w-full max-w-xl overflow-hidden border border-border-main flex flex-col max-h-[90vh]">
+            <div className="px-6 py-4 border-b border-border-main flex justify-between items-center bg-bg-main">
+              <div>
+                <h3 className="text-lg font-fraunces font-bold text-text-primary">Schedule Overrides</h3>
+                <p className="text-sm text-text-secondary">For {activeOverrideTherapist.name}</p>
+              </div>
+              <button onClick={() => setIsOverrideModalOpen(false)} className="text-text-secondary hover:text-text-primary text-xl font-bold">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            
+            <div className="p-6 flex-1 overflow-y-auto space-y-6">
+              {/* List of existing overrides */}
+              <div>
+                <h4 className="text-sm font-bold text-text-primary mb-3">Existing Overrides</h4>
+                {overrides.length > 0 ? (
+                  <ul className="space-y-2">
+                    {overrides.map(ov => (
+                      <li key={ov.id} className="flex justify-between items-center bg-bg-main p-3 rounded-lg border border-border-main">
+                        <div>
+                          <span className="font-mono text-text-primary text-sm font-bold mr-2">{ov.date}</span>
+                          {ov.is_off ? (
+                            <span className="text-xs bg-status-error-soft text-status-error px-2 py-1 rounded-full font-medium border border-status-error/20">Day Off</span>
+                          ) : (
+                            <span className="text-xs text-text-secondary">Custom Hours: {ov.start_time?.substring(0,5)} - {ov.end_time?.substring(0,5)}</span>
+                          )}
+                        </div>
+                        <button onClick={() => deleteOverride(ov.id)} className="text-text-secondary hover:text-status-error p-1">
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                ) : (
+                  <p className="text-sm text-text-secondary">No custom schedules or days off recorded.</p>
+                )}
+              </div>
+
+              <hr className="border-border-main" />
+
+              {/* Add new override form */}
+              <form onSubmit={handleOverrideSubmit} className="space-y-4">
+                <h4 className="text-sm font-bold text-text-primary">Add New Override</h4>
+                
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-text-primary mb-1">Date *</label>
+                    <input required type="date" value={overrideForm.date} onChange={(e) => setOverrideForm({...overrideForm, date: e.target.value})} className="w-full px-3 py-2 bg-surface text-text-primary border border-border-main rounded-lg focus:ring-2 focus:ring-primary outline-none" />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-text-primary mb-1">Type</label>
+                    <select value={overrideForm.is_off ? 'off' : 'custom'} onChange={(e) => setOverrideForm({...overrideForm, is_off: e.target.value === 'off'})} className="w-full px-3 py-2 bg-surface text-text-primary border border-border-main rounded-lg focus:ring-2 focus:ring-primary outline-none">
+                      <option value="off">Day Off (Unavailable)</option>
+                      <option value="custom">Custom Working Hours</option>
+                    </select>
+                  </div>
+                </div>
+
+                {!overrideForm.is_off && (
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-text-primary mb-1">Custom Start Time</label>
+                      <input required type="time" value={overrideForm.start_time} onChange={(e) => setOverrideForm({...overrideForm, start_time: e.target.value+':00'})} className="w-full px-3 py-2 bg-surface text-text-primary border border-border-main rounded-lg focus:ring-2 focus:ring-primary outline-none" />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-text-primary mb-1">Custom End Time</label>
+                      <input required type="time" value={overrideForm.end_time} onChange={(e) => setOverrideForm({...overrideForm, end_time: e.target.value+':00'})} className="w-full px-3 py-2 bg-surface text-text-primary border border-border-main rounded-lg focus:ring-2 focus:ring-primary outline-none" />
+                    </div>
+                  </div>
+                )}
+
+                <div className="pt-2 flex justify-end">
+                  <button type="submit" className="px-4 py-2 bg-primary hover:opacity-90 text-surface rounded-lg font-medium transition-colors text-sm">
+                    Add Override
+                  </button>
+                </div>
+              </form>
+            </div>
           </div>
         </div>
       )}

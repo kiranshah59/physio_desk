@@ -86,5 +86,42 @@ def delete_patient(
     if not patient:
         raise HTTPException(status_code=404, detail="Patient not found")
     db.delete(patient)
+    db.delete(patient)
     db.commit()
     return {"ok": True}
+
+from app.models.appointment import Appointment
+from app.models.invoice import Invoice
+from pydantic import BaseModel
+from typing import Any
+
+@router.get("/{patient_id}/profile")
+def get_patient_profile(
+    *,
+    db: Session = Depends(get_db),
+    patient_id: int,
+    current_user: User = Depends(get_current_user)
+):
+    """Get aggregated patient profile info."""
+    patient = db.query(Patient).filter(Patient.id == patient_id).first()
+    if not patient:
+        raise HTTPException(status_code=404, detail="Patient not found")
+        
+    sessions = db.query(Appointment).filter(Appointment.patient_id == patient_id).order_by(Appointment.date.desc()).all()
+    invoices = db.query(Invoice).filter(Invoice.patient_id == patient_id).order_by(Invoice.date.desc()).all()
+    
+    # We can use schemas, but for rapid aggregation a dict is fine
+    return {
+        "overview": patient,
+        "sessions": [
+            {
+                "id": s.id,
+                "date": s.date,
+                "start_time": s.start_time,
+                "status": s.status,
+                "notes": s.notes,
+                "therapist_name": s.therapist.name if s.therapist else "Unknown"
+            } for s in sessions
+        ],
+        "billing": invoices
+    }

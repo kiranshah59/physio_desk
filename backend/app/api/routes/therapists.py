@@ -4,8 +4,9 @@ from sqlalchemy.orm import Session
 
 from app.core.database import SessionLocal
 from app.models.therapist import Therapist
+from app.models.therapist_override import TherapistOverride
 from app.models.user import User
-from app.schemas.therapist import TherapistCreate, TherapistUpdate, TherapistResponse
+from app.schemas.therapist import TherapistCreate, TherapistUpdate, TherapistResponse, TherapistOverrideCreate, TherapistOverrideResponse
 from app.api.deps import get_db, get_current_active_admin, get_current_user
 
 router = APIRouter()
@@ -82,5 +83,45 @@ def delete_therapist(
     if not therapist:
         raise HTTPException(status_code=404, detail="Therapist not found")
     db.delete(therapist)
+    db.commit()
+    return {"ok": True}
+
+# Overrides
+
+@router.post("/{therapist_id}/overrides", response_model=TherapistOverrideResponse, status_code=status.HTTP_201_CREATED)
+def create_override(
+    *,
+    db: Session = Depends(get_db),
+    therapist_id: int,
+    override_in: TherapistOverrideCreate,
+    current_user: User = Depends(get_current_active_admin)
+):
+    override = TherapistOverride(**override_in.model_dump())
+    db.add(override)
+    db.commit()
+    db.refresh(override)
+    return override
+
+@router.get("/{therapist_id}/overrides", response_model=List[TherapistOverrideResponse])
+def get_overrides(
+    *,
+    db: Session = Depends(get_db),
+    therapist_id: int,
+    current_user: User = Depends(get_current_user)
+):
+    overrides = db.query(TherapistOverride).filter(TherapistOverride.therapist_id == therapist_id).all()
+    return overrides
+
+@router.delete("/overrides/{override_id}")
+def delete_override(
+    *,
+    db: Session = Depends(get_db),
+    override_id: int,
+    current_user: User = Depends(get_current_active_admin)
+):
+    override = db.query(TherapistOverride).filter(TherapistOverride.id == override_id).first()
+    if not override:
+        raise HTTPException(status_code=404, detail="Override not found")
+    db.delete(override)
     db.commit()
     return {"ok": True}

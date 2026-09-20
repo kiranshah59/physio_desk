@@ -27,3 +27,21 @@ class TherapistResponse(TherapistBase):
 
     class Config:
         from_attributes = True
+
+from datetime import date
+
+class TherapistOverrideBase(BaseModel):
+    date: date
+    is_off: bool = False
+    start_time: Optional[time] = None
+    end_time: Optional[time] = None
+
+class TherapistOverrideCreate(TherapistOverrideBase):
+    therapist_id: int
+
+class TherapistOverrideResponse(TherapistOverrideBase):
+    id: int
+    therapist_id: int
+
+    class Config:
+        from_attributes = True

@@ -77,6 +77,7 @@ export default function DashboardPage() {
                 <tr>
                   <th className="px-6 py-3 font-medium">Name</th>
                   <th className="px-6 py-3 font-medium">Condition</th>
+                  <th className="px-6 py-3 font-medium">Package</th>
                   <th className="px-6 py-3 font-medium">Added On</th>
                 </tr>
               </thead>
@@ -91,13 +92,16 @@ export default function DashboardPage() {
                         </span>
                       </td>
                       <td className="px-6 py-4 text-sm text-text-secondary">
+                        {patient.package || 'None'}
+                      </td>
+                      <td className="px-6 py-4 text-sm text-text-secondary">
                         {format(new Date(patient.created_at), 'MMM dd, yyyy')}
                       </td>
                     </tr>
                   ))
                 ) : (
                   <tr>
-                    <td colSpan={3} className="px-6 py-8 text-center text-text-secondary">
+                    <td colSpan={4} className="px-6 py-8 text-center text-text-secondary">
                       No recent patients found.
                     </td>
                   </tr>
