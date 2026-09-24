@@ -18,8 +18,10 @@ During the development of this application, the following reasonable assumptions
 1.  **Therapist Scheduling:** We assumed a default clinic operational window of 09:00 to 17:00, with a standard appointment slot duration of 30 minutes. Therapists can have their schedules customized within the application by an admin.
 2.  **Double-Booking Logic:** We assumed that a therapist cannot be double-booked. The backend API enforces this by checking for overlapping `start_time` and `end_time` intervals for a specific `therapist_id` before confirming an appointment.
 3.  **Role-Based Access Control (RBAC):** We assumed that `staff` can book appointments, manage patients, and view (but not create) invoices. `admin` users have exclusive access to manage Therapist profiles and schedules, as well as generate new invoices.
-4.  **Authentication:** We implemented secure, stateless authentication using JSON Web Tokens (JWT) stored in HTTP cookies/local storage for the frontend, with passwords securely hashed via `bcrypt` in the database.
-5.  **Design System:** We adhered strictly to the provided hex color palette, mapping the provided colors into a customized Tailwind CSS theme (`globals.css`).
+4.  **Therapist Schedule Overrides:** The prompt asked to consider what happens to existing appointments when removing a therapist or overriding their schedule. For overrides, we implemented a dedicated `TherapistOverride` database model to robustly handle custom working hours and specific days off (e.g. holidays) without permanently modifying their base weekly schedule.
+5.  **Calendar Grid Layout:** The prompt asked for a "Calendar/grid view: therapists as columns, time slots as rows (or your own layout)". We chose to implement a comprehensive fixed-interval grid (30-minute intervals from 09:00 to 17:00) with therapists as columns. This provides an intuitive, highly visual layout where empty cells can be clicked to initiate a booking, matching real-world clinic expectations.
+6.  **Authentication:** We implemented secure, stateless authentication using JSON Web Tokens (JWT) stored in HTTP cookies/local storage for the frontend, with passwords securely hashed via `bcrypt` in the database.
+7.  **Design System:** We adhered strictly to the provided hex color palette and typography rules, mapping the provided tokens into a customized Tailwind CSS theme (`globals.css`).
 
 ## 🚀 Detailed Setup Instructions
 
