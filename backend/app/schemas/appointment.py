@@ -2,6 +2,7 @@ from typing import Optional
 from pydantic import BaseModel
 from datetime import date, time, datetime
 from app.models.appointment import AppointmentStatusEnum
+from app.schemas.patient import PatientResponse
 
 class AppointmentBase(BaseModel):
     patient_id: int
@@ -27,6 +28,7 @@ class AppointmentResponse(AppointmentBase):
     id: int
     status: AppointmentStatusEnum
     created_at: datetime
+    patient: PatientResponse
 
     class Config:
         from_attributes = True

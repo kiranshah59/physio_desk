@@ -9,7 +9,8 @@ from app.models.invoice import Invoice, InvoiceStatusEnum
 from app.models.therapist import Therapist
 from app.models.patient import Patient
 from app.models.user import User
-from app.schemas.dashboard import DashboardStats, TherapistCapacity
+from app.schemas.dashboard import DashboardPatient, DashboardStats, TherapistCapacity
+from app.schemas.patient import PatientResponse
 from app.api.deps import get_db, get_current_user
 
 router = APIRouter()
@@ -72,7 +73,19 @@ def get_dashboard_stats(
         ))
         
     # 5. Recent Patients
-    recent_patients = db.query(Patient).order_by(Patient.created_at.desc()).limit(5).all()
+    recent_patients = []
+    for patient in db.query(Patient).order_by(Patient.created_at.desc()).limit(5).all():
+        latest_appointment = db.query(Appointment).filter(
+            Appointment.patient_id == patient.id
+        ).order_by(Appointment.date.desc(), Appointment.start_time.desc()).first()
+
+        patient_data = PatientResponse.model_validate(patient).model_dump()
+        patient_data.pop('status', None)
+        recent_patients.append(DashboardPatient(
+            **patient_data,
+            assigned_therapist_name=patient.assigned_therapist.name if patient.assigned_therapist else None,
+            status=latest_appointment.status.value if latest_appointment else "new"
+        ))
     
     return DashboardStats(
         patients_seen_today=patients_seen,

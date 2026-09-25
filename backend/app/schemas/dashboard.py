@@ -3,6 +3,10 @@ from pydantic import BaseModel
 from datetime import date
 from app.schemas.patient import PatientResponse
 
+class DashboardPatient(PatientResponse):
+    assigned_therapist_name: str | None = None
+    status: str
+
 class TherapistCapacity(BaseModel):
     therapist_id: int
     therapist_name: str
@@ -16,4 +20,4 @@ class DashboardStats(BaseModel):
     revenue_collected_today: float
     open_slots_remaining_today: int
     therapist_capacities: List[TherapistCapacity]
-    recent_patients: List[PatientResponse]
+    recent_patients: List[DashboardPatient]

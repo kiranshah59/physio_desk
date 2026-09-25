@@ -3,7 +3,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
 from app.core.database import SessionLocal
-from app.models.patient import Patient
+from app.models.patient import Patient, PatientStatusEnum
 from app.models.user import User
 from app.schemas.patient import PatientCreate, PatientUpdate, PatientResponse
 from app.api.deps import get_db, get_current_user
@@ -30,12 +30,15 @@ def read_patients(
     skip: int = 0,
     limit: int = 100,
     name: Optional[str] = None,
+    status: Optional[PatientStatusEnum] = None,
     current_user: User = Depends(get_current_user)
 ):
-    """Retrieve patients. Optionally filter by name."""
+    """Retrieve patients. Optionally filter by name or patient status."""
     query = db.query(Patient)
     if name:
         query = query.filter(Patient.name.ilike(f"%{name}%"))
+    if status:
+        query = query.filter(Patient.status == status)
     patients = query.offset(skip).limit(limit).all()
     return patients
 
@@ -85,7 +88,6 @@ def delete_patient(
     patient = db.query(Patient).filter(Patient.id == patient_id).first()
     if not patient:
         raise HTTPException(status_code=404, detail="Patient not found")
-    db.delete(patient)
     db.delete(patient)
     db.commit()
     return {"ok": True}

@@ -2,6 +2,8 @@ from typing import Optional, List
 from pydantic import BaseModel
 from datetime import datetime
 
+from app.models.patient import PatientStatusEnum
+
 class PatientBase(BaseModel):
     name: str
     phone: str
@@ -9,6 +11,7 @@ class PatientBase(BaseModel):
     gender: Optional[str] = None
     address: Optional[str] = None
     condition: Optional[str] = None
+    status: PatientStatusEnum = PatientStatusEnum.active
     assigned_therapist_id: Optional[int] = None
     package: Optional[str] = None
 
@@ -18,6 +21,7 @@ class PatientCreate(PatientBase):
 class PatientUpdate(PatientBase):
     name: Optional[str] = None
     phone: Optional[str] = None
+    status: Optional[PatientStatusEnum] = None
 
 class PatientResponse(PatientBase):
     id: int
