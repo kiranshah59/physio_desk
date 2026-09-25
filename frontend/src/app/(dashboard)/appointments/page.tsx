@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import api from '@/lib/axios';
-import { format, parseISO, addMinutes, setHours, setMinutes, isBefore, isAfter, isSameDay } from 'date-fns';
+import { format, parseISO, addMinutes, isBefore, isAfter, isSameDay } from 'date-fns';
 import { Calendar as CalendarIcon, ChevronLeft, ChevronRight, X, User, Edit2 } from 'lucide-react';
 
 interface Therapist {
@@ -28,19 +28,44 @@ interface Appointment {
   patient?: { name: string };
 }
 
-// Generate time slots from 08:00 to 18:00 every 30 mins
-const generateTimeSlots = () => {
+const timeToMinutes = (time: string) => {
+  const [hours, minutes] = time.split(':').map(Number);
+  return hours * 60 + minutes;
+};
+
+const minutesToTime = (minutes: number) => {
+  const hours = Math.floor(minutes / 60).toString().padStart(2, '0');
+  const remainder = (minutes % 60).toString().padStart(2, '0');
+  return `${hours}:${remainder}:00`;
+};
+
+const greatestCommonDivisor = (first: number, second: number): number => {
+  let left = Math.abs(first);
+  let right = Math.abs(second);
+  while (right) {
+    [left, right] = [right, left % right];
+  }
+  return left;
+};
+
+const generateTimeSlots = (availableTherapists: Therapist[]) => {
+  if (availableTherapists.length === 0) return [];
+
+  const firstSlot = Math.min(...availableTherapists.map(t => timeToMinutes(t.start_time)));
+  const lastSlot = Math.max(...availableTherapists.map(t => timeToMinutes(t.end_time)));
+  const interval = availableTherapists
+    .map(t => t.slot_duration_minutes)
+    .filter(duration => duration > 0)
+    .reduce(greatestCommonDivisor);
+
+  if (!interval) return [];
+
   const slots = [];
-  let current = setMinutes(setHours(new Date(), 8), 0);
-  const end = setMinutes(setHours(new Date(), 18), 0);
-  
-  while (current <= end) {
-    slots.push(format(current, 'HH:mm:ss'));
-    current = addMinutes(current, 30);
+  for (let current = firstSlot; current < lastSlot; current += interval) {
+    slots.push(minutesToTime(current));
   }
   return slots;
 };
-const TIME_SLOTS = generateTimeSlots();
 
 export default function AppointmentsCalendarPage() {
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
@@ -104,6 +129,8 @@ export default function AppointmentsCalendarPage() {
       console.error('Failed to fetch patients', err);
     }
   };
+
+  const timeSlots = generateTimeSlots(therapists);
 
   const handlePrevDay = () => {
     const prev = new Date(selectedDate);
@@ -237,22 +264,27 @@ export default function AppointmentsCalendarPage() {
       const [eH, eM] = a.end_time.split(':').map(Number);
       const aStart = sH * 60 + sM;
       const aEnd = eH * 60 + eM;
-      // Overlap logic: blockStart < aEnd AND blockEnd > aStart
-      return blockStart < aEnd && blockEnd > aStart;
+      // Only paint rows whose start is inside the appointment range.
+      return blockStart >= aStart && blockStart < aEnd;
     });
 
     if (overlappingAppt) {
       // Is this the start of the appointment?
       const [sH, sM] = overlappingAppt.start_time.split(':').map(Number);
       const aStart = sH * 60 + sM;
-      const isStart = blockStart <= aStart;
+      const [eH, eM] = overlappingAppt.end_time.split(':').map(Number);
+      const aEnd = eH * 60 + eM;
+      const isStart = blockStart === aStart;
+      const isEnd = blockEnd >= aEnd;
 
       return (
         <div 
           onClick={() => openDetailsModal(overlappingAppt)}
-          className={`h-16 border border-status-info cursor-pointer transition-colors ${
-            isStart ? 'bg-status-info-soft text-status-info border-t-2' : 'bg-status-info-soft/50 text-transparent border-t-0'
-          } ${overlappingAppt.status === 'completed' ? 'border-status-success bg-status-success-soft text-status-success' : ''}`}
+          className={`h-16 border-x border-status-info cursor-pointer transition-colors ${
+            isStart ? 'bg-status-info-soft text-status-info border-t-2' : 'bg-status-info-soft text-transparent border-t-0'
+          } ${isEnd ? 'border-b-2' : 'border-b-0'} ${
+            overlappingAppt.status === 'completed' ? 'border-status-success bg-status-success-soft text-status-success' : ''
+          }`}
         >
           {isStart && (
             <div className="p-1 h-full flex flex-col justify-center">
@@ -329,7 +361,7 @@ export default function AppointmentsCalendarPage() {
 
               {/* Grid Body */}
               <div className="bg-surface">
-                {TIME_SLOTS.map(time => (
+                {timeSlots.map(time => (
                   <div key={time} className="flex">
                     <div className="w-24 shrink-0 flex items-center justify-center border-r border-b border-border-main bg-bg-main/50 font-mono text-sm text-text-secondary">
                       {time.substring(0, 5)}

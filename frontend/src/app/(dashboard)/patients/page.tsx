@@ -13,6 +13,7 @@ interface Patient {
   gender: string | null;
   address: string | null;
   condition: string | null;
+  status: 'active' | 'on_hold' | 'completed' | 'discharged';
   package: string | null;
 }
 
@@ -27,12 +28,17 @@ export default function PatientsPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingPatientId, setEditingPatientId] = useState<number | null>(null);
   
-  const defaultForm = { name: '', phone: '', age: '', gender: '', address: '', condition: '', package: '' };
+  const defaultForm = { name: '', phone: '', age: '', gender: '', address: '', condition: '', status: 'active', package: '' };
   const [formData, setFormData] = useState(defaultForm);
 
-  const fetchPatients = async (query = '') => {
+  const fetchPatients = async (query = '', currentFilter = 'all') => {
     try {
-      const res = await api.get(`/patients/?name=${query}`);
+      const res = await api.get('/patients/', {
+        params: {
+          name: query || undefined,
+          status: currentFilter === 'all' ? undefined : currentFilter,
+        }
+      });
       setPatients(res.data);
     } catch (err) {
       console.error('Failed to fetch patients', err);
@@ -42,12 +48,18 @@ export default function PatientsPage() {
   };
 
   useEffect(() => {
-    fetchPatients();
+    fetchPatients(search, filter);
   }, []);
 
   const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setSearch(e.target.value);
-    fetchPatients(e.target.value);
+    const nextValue = e.target.value;
+    setSearch(nextValue);
+    fetchPatients(nextValue, filter);
+  };
+
+  const handleFilterChange = (value: string) => {
+    setFilter(value);
+    fetchPatients(search, value);
   };
 
   const openAddModal = () => {
@@ -65,6 +77,7 @@ export default function PatientsPage() {
       gender: patient.gender || '',
       address: patient.address || '',
       condition: patient.condition || '',
+      status: patient.status || 'active',
       package: patient.package || ''
     });
     setIsModalOpen(true);
@@ -75,6 +88,7 @@ export default function PatientsPage() {
     const payload = {
       ...formData,
       age: formData.age ? parseInt(formData.age) : null,
+      status: formData.status || 'active',
     };
     
     try {
@@ -85,7 +99,7 @@ export default function PatientsPage() {
       }
       setIsModalOpen(false);
       setFormData(defaultForm);
-      fetchPatients(search);
+      fetchPatients(search, filter);
     } catch (err) {
       console.error('Failed to save patient', err);
     }
@@ -95,9 +109,28 @@ export default function PatientsPage() {
     if (!confirm('Are you sure you want to delete this patient?')) return;
     try {
       await api.delete(`/patients/${id}`);
-      fetchPatients(search);
+      fetchPatients(search, filter);
     } catch (err) {
       console.error('Failed to delete patient', err);
+    }
+  };
+
+  const formatStatus = (status: Patient['status']) => status
+    .replace('_', ' ')
+    .replace(/\b\w/g, (char) => char.toUpperCase());
+
+  const statusBadgeClass = (status: Patient['status']) => {
+    switch (status) {
+      case 'active':
+        return 'bg-status-info-soft text-status-info border-status-info/20';
+      case 'completed':
+        return 'bg-status-success-soft text-status-success border-status-success/20';
+      case 'on_hold':
+        return 'bg-status-warning-soft text-status-warning border-status-warning/20';
+      case 'discharged':
+        return 'bg-status-error-soft text-status-error border-status-error/20';
+      default:
+        return 'bg-bg-main text-text-secondary border-border-main';
     }
   };
 
@@ -126,11 +159,13 @@ export default function PatientsPage() {
         <div className="border-l border-border-main pl-3">
           <select 
             value={filter} 
-            onChange={(e) => setFilter(e.target.value)}
+            onChange={(e) => handleFilterChange(e.target.value)}
             className="bg-bg-main text-text-secondary text-sm px-3 py-1.5 rounded-lg border border-border-main outline-none focus:ring-2 focus:ring-primary"
           >
-            <option value="all">All Conditions</option>
-            <option value="active">Active Treatment</option>
+            <option value="all">All Statuses</option>
+            <option value="active">Active</option>
+            <option value="on_hold">On Hold</option>
+            <option value="completed">Completed</option>
             <option value="discharged">Discharged</option>
           </select>
         </div>
@@ -171,6 +206,9 @@ export default function PatientsPage() {
                     </td>
                     <td className="px-6 py-4">
                       <div className="flex flex-col items-start gap-1">
+                        <span className={`px-3 py-1 rounded-full text-xs font-medium border ${statusBadgeClass(patient.status)}`}>
+                          {formatStatus(patient.status)}
+                        </span>
                         <span className="bg-status-info-soft text-status-info px-3 py-1 rounded-full text-xs font-medium border border-status-info/20">
                           {patient.condition || 'N/A'}
                         </span>
@@ -248,9 +286,19 @@ export default function PatientsPage() {
                   <input type="text" value={formData.condition} onChange={(e) => setFormData({...formData, condition: e.target.value})} placeholder="e.g. Lower Back Pain" className="w-full px-3 py-2 bg-surface text-text-primary border border-border-main rounded-lg focus:ring-2 focus:ring-primary outline-none" />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-text-primary mb-1">Treatment Package</label>
-                  <input type="text" value={formData.package} onChange={(e) => setFormData({...formData, package: e.target.value})} placeholder="e.g. Standard Rehab" className="w-full px-3 py-2 bg-surface text-text-primary border border-border-main rounded-lg focus:ring-2 focus:ring-primary outline-none" />
+                  <label className="block text-sm font-medium text-text-primary mb-1">Status</label>
+                  <select value={formData.status} onChange={(e) => setFormData({...formData, status: e.target.value})} className="w-full px-3 py-2 bg-surface text-text-primary border border-border-main rounded-lg focus:ring-2 focus:ring-primary outline-none">
+                    <option value="active">Active</option>
+                    <option value="on_hold">On Hold</option>
+                    <option value="completed">Completed</option>
+                    <option value="discharged">Discharged</option>
+                  </select>
                 </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-text-primary mb-1">Treatment Package</label>
+                <input type="text" value={formData.package} onChange={(e) => setFormData({...formData, package: e.target.value})} placeholder="e.g. Standard Rehab" className="w-full px-3 py-2 bg-surface text-text-primary border border-border-main rounded-lg focus:ring-2 focus:ring-primary outline-none" />
               </div>
               
               <div className="pt-4 flex justify-end gap-3">

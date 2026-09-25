@@ -12,7 +12,7 @@ export default function Sidebar() {
   const routes = [
     { name: 'Dashboard', href: '/', icon: LayoutDashboard },
     { name: 'Patients', href: '/patients', icon: Users },
-    { name: 'Appointments', href: '/appointments', icon: Calendar },
+    { name: 'Schedule', href: '/appointments', icon: Calendar },
   ];
 
   // Admin only routes

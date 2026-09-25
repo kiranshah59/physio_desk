@@ -41,7 +41,7 @@ export default function BillingPage() {
 
   const fetchInvoices = async () => {
     try {
-      const res = await api.get('/billing/');
+      const res = await api.get('/invoices/');
       setInvoices(res.data);
     } catch (err) {
       console.error('Failed to fetch invoices', err);
@@ -86,18 +86,19 @@ export default function BillingPage() {
         patient_id: parseInt(formData.patient_id),
         amount: parseFloat(formData.amount),
         discount: parseFloat(formData.discount || '0'),
-        payment_method: formData.payment_method || null
+        payment_method: formData.payment_method || null,
+        date: new Date().toISOString().split('T')[0]
       };
 
       if (editingInvoiceId) {
-        await api.put(`/billing/${editingInvoiceId}`, {
+        await api.put(`/invoices/${editingInvoiceId}`, {
           status: payload.status,
           payment_method: payload.payment_method,
           discount: payload.discount,
           amount: payload.amount
         });
       } else {
-        await api.post('/billing/', payload);
+        await api.post('/invoices/', payload);
       }
       setIsModalOpen(false);
       setFormData(defaultForm);
@@ -109,7 +110,7 @@ export default function BillingPage() {
 
   const handleStatusUpdate = async (id: number, status: string) => {
     try {
-      await api.put(`/billing/${id}`, { status });
+      await api.put(`/invoices/${id}`, { status });
       fetchInvoices();
     } catch (err) {
       console.error('Failed to update status', err);
@@ -119,7 +120,7 @@ export default function BillingPage() {
   const handleDelete = async (id: number) => {
     if (!confirm('Are you sure you want to void this invoice?')) return;
     try {
-      await api.delete(`/billing/${id}`);
+      await api.delete(`/invoices/${id}`);
       fetchInvoices();
     } catch (err) {
       console.error('Failed to delete invoice', err);

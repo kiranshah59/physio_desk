@@ -5,8 +5,33 @@ import api from '@/lib/axios';
 import { Users, UserRoundCog, DollarSign, Clock, Calendar as CalendarIcon } from 'lucide-react';
 import { format } from 'date-fns';
 
+interface DashboardPatient {
+  id: number;
+  name: string;
+  condition: string | null;
+  assigned_therapist_name: string | null;
+  package: string | null;
+  status: string;
+  created_at: string;
+}
+
+interface DashboardStats {
+  patients_seen_today: number;
+  therapists_on_duty_today: number;
+  revenue_collected_today: number;
+  open_slots_remaining_today: number;
+  therapist_capacities: {
+    therapist_id: number;
+    therapist_name: string;
+    total_slots: number;
+    booked_slots: number;
+    free_slots: number;
+  }[];
+  recent_patients: DashboardPatient[];
+}
+
 export default function DashboardPage() {
-  const [stats, setStats] = useState<any>(null);
+  const [stats, setStats] = useState<DashboardStats | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
@@ -15,7 +40,7 @@ export default function DashboardPage() {
       try {
         const response = await api.get('/dashboard/');
         setStats(response.data);
-      } catch (err: any) {
+      } catch {
         setError('Failed to load dashboard statistics.');
       } finally {
         setLoading(false);
@@ -77,13 +102,14 @@ export default function DashboardPage() {
                 <tr>
                   <th className="px-6 py-3 font-medium">Name</th>
                   <th className="px-6 py-3 font-medium">Condition</th>
+                  <th className="px-6 py-3 font-medium">Therapist</th>
                   <th className="px-6 py-3 font-medium">Package</th>
-                  <th className="px-6 py-3 font-medium">Added On</th>
+                  <th className="px-6 py-3 font-medium">Status</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-border-main text-text-primary">
                 {stats.recent_patients.length > 0 ? (
-                  stats.recent_patients.map((patient: any) => (
+                  stats.recent_patients.map((patient) => (
                     <tr key={patient.id} className="hover:bg-bg-main/50 transition-colors">
                       <td className="px-6 py-4 font-medium">{patient.name}</td>
                       <td className="px-6 py-4">
@@ -92,16 +118,21 @@ export default function DashboardPage() {
                         </span>
                       </td>
                       <td className="px-6 py-4 text-sm text-text-secondary">
+                        {patient.assigned_therapist_name || 'Unassigned'}
+                      </td>
+                      <td className="px-6 py-4 text-sm text-text-secondary">
                         {patient.package || 'None'}
                       </td>
                       <td className="px-6 py-4 text-sm text-text-secondary">
-                        {format(new Date(patient.created_at), 'MMM dd, yyyy')}
+                        <span className="bg-bg-main border border-border-main px-2.5 py-1 rounded-full text-xs font-medium uppercase">
+                          {patient.status}
+                        </span>
                       </td>
                     </tr>
                   ))
                 ) : (
                   <tr>
-                    <td colSpan={4} className="px-6 py-8 text-center text-text-secondary">
+                    <td colSpan={5} className="px-6 py-8 text-center text-text-secondary">
                       No recent patients found.
                     </td>
                   </tr>
