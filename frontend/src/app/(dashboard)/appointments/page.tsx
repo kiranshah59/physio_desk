@@ -39,6 +39,18 @@ const minutesToTime = (minutes: number) => {
   return `${hours}:${remainder}:00`;
 };
 
+const getApiErrorMessage = (error: any, fallback: string) => {
+  const detail = error.response?.data?.detail;
+  if (typeof detail === 'string') return detail;
+  if (Array.isArray(detail)) {
+    return detail.map((item: any) => item.msg || JSON.stringify(item)).join('; ');
+  }
+  if (detail && typeof detail === 'object') {
+    return detail.message || JSON.stringify(detail);
+  }
+  return fallback;
+};
+
 const greatestCommonDivisor = (first: number, second: number): number => {
   let left = Math.abs(first);
   let right = Math.abs(second);
@@ -218,9 +230,9 @@ export default function AppointmentsCalendarPage() {
         end_time: endTimeStr
       });
       setIsDetailsModalOpen(false);
-      fetchData();
+      setSelectedDate(parseISO(rescheduleForm.date));
     } catch (err: any) {
-      alert(err.response?.data?.detail || 'Failed to reschedule. Ensure slot is free.');
+      alert(getApiErrorMessage(err, 'Failed to reschedule appointment.'));
     }
   };
 
