@@ -90,20 +90,14 @@ export default function LoginPage() {
 
         <div className="mt-6 pt-6 border-t border-border-main text-center">
           <p className="text-sm text-text-secondary mb-2">
-            Need a new clinic administrator account?
+            Don't have an account?
           </p>
           <Link
             href="/register"
             className="inline-block text-sm font-semibold text-primary hover:underline"
           >
-            Register as Administrator &rarr;
+            Sign Up &rarr;
           </Link>
-        </div>
-        
-        <div className="mt-6 text-center text-xs text-text-secondary bg-bg-main p-3 rounded-lg border border-border-main/60 space-y-1">
-          <p className="font-medium text-text-primary">Demo Credentials:</p>
-          <p>Admin: <span className="font-mono text-primary-text-soft">admin@physiodesk.com</span> / <span className="font-mono">password123</span></p>
-          <p>Staff: <span className="font-mono text-primary-text-soft">staff@physiodesk.com</span> / <span className="font-mono">password123</span></p>
         </div>
       </div>
     </div>

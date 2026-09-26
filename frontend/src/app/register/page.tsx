@@ -5,9 +5,11 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import api from '@/lib/axios';
-import { ShieldCheck, ArrowLeft, CheckCircle2 } from 'lucide-react';
+import { UserPlus, ArrowLeft, CheckCircle2 } from 'lucide-react';
 
 export default function RegisterPage() {
+  const [name, setName] = useState('');
+  const [phone, setPhone] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -35,6 +37,8 @@ export default function RegisterPage() {
 
     try {
       const response = await api.post('/auth/register', {
+        name: name.trim() || undefined,
+        phone: phone.trim() || undefined,
         email: email.trim(),
         password: password,
         role: 'admin'
@@ -57,12 +61,12 @@ export default function RegisterPage() {
       <div className="max-w-md w-full bg-surface rounded-xl shadow-md border border-border-main p-8">
         <div className="text-center mb-8">
           <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-primary-soft text-primary mb-3">
-            <ShieldCheck className="w-6 h-6" />
+            <UserPlus className="w-6 h-6" />
           </div>
           <h1 className="text-3xl font-fraunces font-bold text-primary mb-1">PhysioDesk</h1>
-          <h2 className="text-xl font-semibold text-text-primary">Admin Registration</h2>
+          <h2 className="text-xl font-semibold text-text-primary">Create an Account</h2>
           <p className="text-sm text-text-secondary mt-1">
-            Create an administrator account to manage your clinic
+            Sign up to manage your clinic
           </p>
         </div>
 
@@ -75,14 +79,42 @@ export default function RegisterPage() {
         {success && (
           <div className="bg-status-success-soft text-status-success p-4 rounded-md mb-6 text-sm flex items-center gap-2 justify-center">
             <CheckCircle2 className="w-5 h-5" />
-            <span>Admin account created! Logging you in...</span>
+            <span>Account created! Logging you in...</span>
           </div>
         )}
 
-        <form onSubmit={handleSubmit} className="space-y-5">
+        <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <label className="block text-sm font-medium text-text-primary mb-1">
-              Admin Email Address
+              Full Name
+            </label>
+            <input
+              type="text"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              disabled={loading || success}
+              className="w-full px-4 py-2 bg-surface text-text-primary border border-border-main rounded-lg focus:ring-2 focus:ring-primary focus:border-primary outline-none transition-colors disabled:opacity-50"
+              placeholder="Jane Doe"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-text-primary mb-1">
+              Phone Number
+            </label>
+            <input
+              type="tel"
+              value={phone}
+              onChange={(e) => setPhone(e.target.value)}
+              disabled={loading || success}
+              className="w-full px-4 py-2 bg-surface text-text-primary border border-border-main rounded-lg focus:ring-2 focus:ring-primary focus:border-primary outline-none transition-colors disabled:opacity-50"
+              placeholder="+1 (555) 000-0000"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-text-primary mb-1">
+              Email Address
             </label>
             <input
               type="email"
@@ -91,7 +123,7 @@ export default function RegisterPage() {
               required
               disabled={loading || success}
               className="w-full px-4 py-2 bg-surface text-text-primary border border-border-main rounded-lg focus:ring-2 focus:ring-primary focus:border-primary outline-none transition-colors disabled:opacity-50"
-              placeholder="clinic.admin@physiodesk.com"
+              placeholder="admin@physiodesk.com"
             />
           </div>
 
@@ -127,17 +159,12 @@ export default function RegisterPage() {
             />
           </div>
 
-          <div className="text-xs text-text-secondary bg-bg-main p-3 rounded-lg border border-border-main/60">
-            <p className="font-medium text-text-primary mb-1">🔐 Administrator Permissions:</p>
-            <p>Admin accounts have full control to manage therapists, configure schedules, access financial billing, and provision staff member accounts.</p>
-          </div>
-
           <button
             type="submit"
             disabled={loading || success}
-            className="w-full bg-primary text-surface py-2.5 px-4 rounded-lg hover:opacity-90 focus:ring-4 focus:ring-primary/20 transition-colors disabled:opacity-50 disabled:cursor-not-allowed font-medium shadow-sm cursor-pointer"
+            className="w-full bg-primary text-surface py-2.5 px-4 rounded-lg hover:opacity-90 focus:ring-4 focus:ring-primary/20 transition-colors disabled:opacity-50 disabled:cursor-not-allowed font-medium shadow-sm cursor-pointer mt-4"
           >
-            {loading ? 'Creating Account...' : 'Register as Administrator'}
+            {loading ? 'Creating Account...' : 'Sign Up'}
           </button>
         </form>
 

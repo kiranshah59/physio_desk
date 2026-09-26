@@ -39,6 +39,8 @@ def create_staff_or_user(
     role = user_in.role if user_in.role else RoleEnum.staff
 
     new_user = User(
+        name=user_in.name,
+        phone=user_in.phone,
         email=user_in.email,
         password_hash=get_password_hash(user_in.password),
         role=role
@@ -79,6 +81,12 @@ def update_user(
 
     if user_in.role is not None:
         user.role = user_in.role
+        
+    if user_in.name is not None:
+        user.name = user_in.name
+        
+    if user_in.phone is not None:
+        user.phone = user_in.phone
 
     db.commit()
     db.refresh(user)

@@ -56,6 +56,8 @@ def register_admin(
     
     # Registration endpoint creates an admin account
     user = User(
+        name=user_in.name,
+        phone=user_in.phone,
         email=user_in.email,
         password_hash=get_password_hash(user_in.password),
         role=RoleEnum.admin
