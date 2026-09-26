@@ -36,6 +36,7 @@ def seed_db():
     t1 = Therapist(
         name="Dr. Sarah Jenkins",
         specialty="Sports Rehabilitation",
+
         working_days=[1, 2, 3, 4, 5],  # Mon-Fri
         start_time=datetime.time(9, 0),
         end_time=datetime.time(17, 0),
