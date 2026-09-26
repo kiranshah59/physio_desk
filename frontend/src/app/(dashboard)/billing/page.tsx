@@ -136,6 +136,13 @@ export default function BillingPage() {
     }
   };
 
+  const filteredInvoices = invoices.filter((invoice) => {
+    const matchesStatus = filter === 'all' || invoice.status.toLowerCase() === filter;
+    const patientName = invoice.patient?.name || `ID: ${invoice.patient_id}`;
+    const matchesSearch = patientName.toLowerCase().includes(search.trim().toLowerCase());
+    return matchesStatus && matchesSearch;
+  });
+
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
@@ -192,8 +199,8 @@ export default function BillingPage() {
                 <tr>
                   <td colSpan={6} className="px-6 py-8 text-center text-text-secondary">Loading invoices...</td>
                 </tr>
-              ) : invoices.length > 0 ? (
-                invoices.map((inv) => (
+              ) : filteredInvoices.length > 0 ? (
+                filteredInvoices.map((inv) => (
                   <tr key={inv.id} className="hover:bg-bg-main/50 transition-colors">
                     <td className="px-6 py-4 font-medium text-text-primary font-mono">
                       INV-{inv.id.toString().padStart(4, '0')}
@@ -243,7 +250,9 @@ export default function BillingPage() {
                 ))
               ) : (
                 <tr>
-                  <td colSpan={6} className="px-6 py-8 text-center text-text-secondary">No invoices found.</td>
+                  <td colSpan={6} className="px-6 py-8 text-center text-text-secondary">
+                    {invoices.length === 0 ? 'No invoices found.' : 'No invoices match these filters.'}
+                  </td>
                 </tr>
               )}
             </tbody>
