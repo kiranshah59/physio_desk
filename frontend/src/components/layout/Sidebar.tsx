@@ -13,11 +13,11 @@ export default function Sidebar() {
     { name: 'Dashboard', href: '/', icon: LayoutDashboard },
     { name: 'Patients', href: '/patients', icon: Users },
     { name: 'Schedule', href: '/appointments', icon: Calendar },
+    { name: 'Therapists', href: '/therapists', icon: UserRoundCog },
   ];
 
   // Admin only routes
   if (user?.role === 'admin') {
-    routes.push({ name: 'Therapists', href: '/therapists', icon: UserRoundCog });
     routes.push({ name: 'Staff Access', href: '/users', icon: ShieldCheck });
   }
   

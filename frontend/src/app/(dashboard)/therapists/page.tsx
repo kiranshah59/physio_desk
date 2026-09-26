@@ -1,7 +1,6 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
 import api from '@/lib/axios';
 import { useAuth } from '@/contexts/AuthContext';
 import { Plus, Edit2, Trash2, CalendarX, X } from 'lucide-react';
@@ -29,7 +28,6 @@ const WEEKDAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Satur
 
 export default function TherapistsPage() {
   const { user } = useAuth();
-  const router = useRouter();
   
   const [therapists, setTherapists] = useState<Therapist[]>([]);
   const [loading, setLoading] = useState(true);
@@ -53,12 +51,8 @@ export default function TherapistsPage() {
   });
 
   useEffect(() => {
-    if (user && user.role !== 'admin') {
-      router.push('/');
-      return;
-    }
     fetchTherapists();
-  }, [user, router]);
+  }, [user]);
 
   const fetchTherapists = async () => {
     try {
@@ -163,22 +157,35 @@ export default function TherapistsPage() {
     }
   };
 
-  if (user?.role !== 'admin') return null;
+  const specialties = Array.from(
+    new Set(therapists.map((therapist) => therapist.specialty.trim()).filter(Boolean))
+  ).sort((first, second) => first.localeCompare(second));
+  const filteredTherapists = therapists.filter((therapist) => {
+    const matchesSpecialty = filter === 'all' || therapist.specialty === filter;
+    const matchesSearch = therapist.name.toLowerCase().includes(search.trim().toLowerCase());
+    return matchesSpecialty && matchesSearch;
+  });
 
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-2xl font-fraunces font-bold text-text-primary">Therapist Management</h1>
-          <p className="text-sm text-text-secondary mt-1">Admin access only</p>
+          <h1 className="text-2xl font-fraunces font-bold text-text-primary">
+            {user?.role === 'admin' ? 'Therapist Management' : 'Therapists'}
+          </h1>
+          {user?.role !== 'admin' && (
+            <p className="text-sm text-text-secondary mt-1">Read-only access</p>
+          )}
         </div>
-        <button
-          onClick={openAddModal}
-          className="bg-primary text-surface px-4 py-2 rounded-lg hover:opacity-90 flex items-center gap-2 font-medium transition-colors"
-        >
-          <Plus className="w-5 h-5" />
-          Add Therapist
-        </button>
+        {user?.role === 'admin' && (
+          <button
+            onClick={openAddModal}
+            className="bg-primary text-surface px-4 py-2 rounded-lg hover:opacity-90 flex items-center gap-2 font-medium transition-colors"
+          >
+            <Plus className="w-5 h-5" />
+            Add Therapist
+          </button>
+        )}
       </div>
 
       <div className="bg-surface p-4 rounded-xl shadow-md border border-border-main flex items-center gap-3">
@@ -197,8 +204,9 @@ export default function TherapistsPage() {
             className="bg-bg-main text-text-secondary text-sm px-3 py-1.5 rounded-lg border border-border-main outline-none focus:ring-2 focus:ring-primary"
           >
             <option value="all">All Specialties</option>
-            <option value="pt">Physical Therapy</option>
-            <option value="ot">Occupational Therapy</option>
+            {specialties.map((specialty) => (
+              <option key={specialty} value={specialty}>{specialty}</option>
+            ))}
           </select>
         </div>
       </div>
@@ -212,16 +220,18 @@ export default function TherapistsPage() {
                 <th className="px-6 py-4 font-medium">Specialty</th>
                 <th className="px-6 py-4 font-medium">Working Days</th>
                 <th className="px-6 py-4 font-medium">Shift</th>
-                <th className="px-6 py-4 font-medium text-right">Actions</th>
+                {user?.role === 'admin' && (
+                  <th className="px-6 py-4 font-medium text-right">Actions</th>
+                )}
               </tr>
             </thead>
             <tbody className="divide-y divide-border-main text-text-primary">
               {loading ? (
                 <tr>
-                  <td colSpan={5} className="px-6 py-8 text-center text-text-secondary">Loading therapists...</td>
+                  <td colSpan={user?.role === 'admin' ? 5 : 4} className="px-6 py-8 text-center text-text-secondary">Loading therapists...</td>
                 </tr>
-              ) : therapists.length > 0 ? (
-                therapists.map((t) => (
+              ) : filteredTherapists.length > 0 ? (
+                filteredTherapists.map((t) => (
                   <tr key={t.id} className="hover:bg-bg-main/50 transition-colors">
                     <td className="px-6 py-4 font-medium text-text-primary">{t.name}</td>
                     <td className="px-6 py-4">
@@ -236,22 +246,26 @@ export default function TherapistsPage() {
                       {t.start_time.substring(0,5)} - {t.end_time.substring(0,5)}<br/>
                       <span className="text-xs text-text-secondary">{t.slot_duration_minutes}m slots</span>
                     </td>
-                    <td className="px-6 py-4 text-right">
-                      <button onClick={() => openOverrideModal(t)} className="text-text-secondary hover:text-tertiary p-2 transition-colors" title="Manage Schedule Overrides">
-                        <CalendarX className="w-4 h-4" />
-                      </button>
-                      <button onClick={() => openEditModal(t)} className="text-text-secondary hover:text-primary p-2 transition-colors" title="Edit">
-                        <Edit2 className="w-4 h-4" />
-                      </button>
-                      <button onClick={() => handleDelete(t.id)} className="text-text-secondary hover:text-status-error p-2 transition-colors" title="Delete">
-                        <Trash2 className="w-4 h-4" />
-                      </button>
-                    </td>
+                    {user?.role === 'admin' && (
+                      <td className="px-6 py-4 text-right">
+                        <button onClick={() => openOverrideModal(t)} className="text-text-secondary hover:text-tertiary p-2 transition-colors" title="Manage Schedule Overrides">
+                          <CalendarX className="w-4 h-4" />
+                        </button>
+                        <button onClick={() => openEditModal(t)} className="text-text-secondary hover:text-primary p-2 transition-colors" title="Edit">
+                          <Edit2 className="w-4 h-4" />
+                        </button>
+                        <button onClick={() => handleDelete(t.id)} className="text-text-secondary hover:text-status-error p-2 transition-colors" title="Delete">
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </td>
+                    )}
                   </tr>
                 ))
               ) : (
                 <tr>
-                  <td colSpan={5} className="px-6 py-8 text-center text-text-secondary">No therapists found.</td>
+                  <td colSpan={user?.role === 'admin' ? 5 : 4} className="px-6 py-8 text-center text-text-secondary">
+                    {therapists.length === 0 ? 'No therapists found.' : 'No therapists match these filters.'}
+                  </td>
                 </tr>
               )}
             </tbody>
@@ -260,7 +274,7 @@ export default function TherapistsPage() {
       </div>
 
       {/* Add/Edit Therapist Modal */}
-      {isModalOpen && (
+      {isModalOpen && user?.role === 'admin' && (
         <div className="fixed inset-0 bg-secondary/50 flex items-center justify-center z-50 p-4">
           <div className="bg-surface rounded-xl shadow-xl w-full max-w-lg overflow-hidden border border-border-main">
             <div className="px-6 py-4 border-b border-border-main flex justify-between items-center bg-bg-main">
@@ -339,7 +353,7 @@ export default function TherapistsPage() {
       )}
 
       {/* Overrides Modal */}
-      {isOverrideModalOpen && activeOverrideTherapist && (
+      {isOverrideModalOpen && activeOverrideTherapist && user?.role === 'admin' && (
         <div className="fixed inset-0 bg-secondary/50 flex items-center justify-center z-50 p-4">
           <div className="bg-surface rounded-xl shadow-xl w-full max-w-xl overflow-hidden border border-border-main flex flex-col max-h-[90vh]">
             <div className="px-6 py-4 border-b border-border-main flex justify-between items-center bg-bg-main">
