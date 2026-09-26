@@ -88,6 +88,14 @@ def delete_patient(
     patient = db.query(Patient).filter(Patient.id == patient_id).first()
     if not patient:
         raise HTTPException(status_code=404, detail="Patient not found")
+        
+    # Delete associated appointments and invoices first to avoid foreign key constraints
+    from app.models.appointment import Appointment
+    from app.models.invoice import Invoice
+    
+    db.query(Appointment).filter(Appointment.patient_id == patient_id).delete()
+    db.query(Invoice).filter(Invoice.patient_id == patient_id).delete()
+    
     db.delete(patient)
     db.commit()
     return {"ok": True}
