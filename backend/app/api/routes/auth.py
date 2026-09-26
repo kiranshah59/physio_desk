@@ -40,13 +40,30 @@ def login_access_token(
         }
     }
 
+@router.get("/admin-exists")
+def check_admin_exists(db: Session = Depends(get_db)):
+    """
+    Check if an admin account already exists in the system.
+    """
+    admin_exists = db.query(User).filter(User.role == RoleEnum.admin).first() is not None
+    return {"admin_exists": admin_exists}
+
 @router.post("/register", response_model=Token)
 def register_admin(
     user_in: UserCreate, db: Session = Depends(get_db)
 ):
     """
-    Register a new administrator account and return an access token
+    Register a new administrator account and return an access token.
+    Only one admin account is allowed in the system.
     """
+    # Check if an admin already exists — only one admin allowed
+    existing_admin = db.query(User).filter(User.role == RoleEnum.admin).first()
+    if existing_admin:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="An administrator account already exists. Contact your admin for staff access."
+        )
+
     existing_user = db.query(User).filter(User.email == user_in.email).first()
     if existing_user:
         raise HTTPException(

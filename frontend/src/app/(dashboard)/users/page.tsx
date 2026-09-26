@@ -41,7 +41,7 @@ export default function UsersPage() {
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [newEmail, setNewEmail] = useState('');
   const [newPassword, setNewPassword] = useState('');
-  const [newRole, setNewRole] = useState<'staff' | 'admin'>('staff');
+
   const [showPassword, setShowPassword] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [modalError, setModalError] = useState('');
@@ -94,7 +94,7 @@ export default function UsersPage() {
   const handleOpenAddModal = () => {
     setNewEmail('');
     setNewPassword(generateRandomPassword());
-    setNewRole('staff');
+
     setModalError('');
     setShowPassword(true);
     setIsAddModalOpen(true);
@@ -118,7 +118,7 @@ export default function UsersPage() {
       await api.post('/users', {
         email: newEmail.trim(),
         password: newPassword,
-        role: newRole,
+        role: 'staff',
       });
 
       showNotification('success', `Staff account for ${newEmail} created successfully.`);
@@ -485,48 +485,12 @@ export default function UsersPage() {
                 <label className="block text-xs font-semibold text-text-secondary uppercase mb-1">
                   Role & Permissions
                 </label>
-                <div className="grid grid-cols-2 gap-3">
-                  <label
-                    className={`flex items-start gap-2.5 p-3 rounded-lg border cursor-pointer transition-colors ${
-                      newRole === 'staff'
-                        ? 'border-tertiary bg-tertiary-soft/40 text-text-primary'
-                        : 'border-border-main hover:bg-bg-main/50'
-                    }`}
-                  >
-                    <input
-                      type="radio"
-                      name="role"
-                      value="staff"
-                      checked={newRole === 'staff'}
-                      onChange={() => setNewRole('staff')}
-                      className="mt-0.5 text-tertiary"
-                    />
-                    <div>
-                      <div className="font-semibold text-xs text-text-primary">Staff Member</div>
-                      <div className="text-[11px] text-text-secondary">Schedule & Patients access</div>
-                    </div>
-                  </label>
-
-                  <label
-                    className={`flex items-start gap-2.5 p-3 rounded-lg border cursor-pointer transition-colors ${
-                      newRole === 'admin'
-                        ? 'border-primary bg-primary-soft/40 text-text-primary'
-                        : 'border-border-main hover:bg-bg-main/50'
-                    }`}
-                  >
-                    <input
-                      type="radio"
-                      name="role"
-                      value="admin"
-                      checked={newRole === 'admin'}
-                      onChange={() => setNewRole('admin')}
-                      className="mt-0.5 text-primary"
-                    />
-                    <div>
-                      <div className="font-semibold text-xs text-text-primary">Administrator</div>
-                      <div className="text-[11px] text-text-secondary">Full clinic system access</div>
-                    </div>
-                  </label>
+                <div className="flex items-center gap-2.5 p-3 rounded-lg border border-tertiary bg-tertiary-soft/40">
+                  <UserCheck className="w-4 h-4 text-tertiary" />
+                  <div>
+                    <div className="font-semibold text-xs text-text-primary">Staff Member</div>
+                    <div className="text-[11px] text-text-secondary">Schedule & Patients access</div>
+                  </div>
                 </div>
               </div>
 

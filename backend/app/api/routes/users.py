@@ -35,15 +35,13 @@ def create_staff_or_user(
             detail="A user with this email address already exists."
         )
     
-    # Default to staff if not specified
-    role = user_in.role if user_in.role else RoleEnum.staff
-
+    # Admin can only create staff accounts — never another admin
     new_user = User(
         name=user_in.name,
         phone=user_in.phone,
         email=user_in.email,
         password_hash=get_password_hash(user_in.password),
-        role=role
+        role=RoleEnum.staff
     )
     db.add(new_user)
     db.commit()
@@ -80,6 +78,12 @@ def update_user(
         user.password_hash = get_password_hash(user_in.password)
 
     if user_in.role is not None:
+        # Prevent promoting any user to admin — only one admin allowed
+        if user_in.role == RoleEnum.admin:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Cannot promote users to administrator. Only one admin is allowed."
+            )
         user.role = user_in.role
         
     if user_in.name is not None:
@@ -113,6 +117,7 @@ def delete_user(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="User not found."
         )
+    
     
     db.delete(user)
     db.commit()
