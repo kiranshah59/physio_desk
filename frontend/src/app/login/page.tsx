@@ -1,16 +1,31 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useAuth } from '@/contexts/AuthContext';
 import api from '@/lib/axios';
+import { Eye, EyeOff } from 'lucide-react';
 
 export default function LoginPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [adminExists, setAdminExists] = useState(true);
   const { login } = useAuth();
+
+  useEffect(() => {
+    const checkAdmin = async () => {
+      try {
+        const res = await api.get('/auth/admin-exists');
+        setAdminExists(res.data.admin_exists);
+      } catch {
+        setAdminExists(true);
+      }
+    };
+    checkAdmin();
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -19,7 +34,7 @@ export default function LoginPage() {
 
     try {
       const formData = new URLSearchParams();
-      formData.append('username', email); // OAuth2 expects 'username'
+      formData.append('username', email);
       formData.append('password', password);
 
       const response = await api.post('/auth/login', formData, {
@@ -69,14 +84,25 @@ export default function LoginPage() {
             <label className="block text-sm font-medium text-text-primary mb-1">
               Password
             </label>
-            <input
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-              className="w-full px-4 py-2 bg-surface text-text-primary border border-border-main rounded-lg focus:ring-2 focus:ring-primary focus:border-primary outline-none transition-colors"
-              placeholder="••••••••"
-            />
+            <div className="relative">
+              <input
+                type={showPassword ? 'text' : 'password'}
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+                className="w-full px-4 py-2 pr-11 bg-surface text-text-primary border border-border-main rounded-lg focus:ring-2 focus:ring-primary focus:border-primary outline-none transition-colors"
+                placeholder="••••••••"
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                aria-label={showPassword ? 'Hide password' : 'Show password'}
+                title={showPassword ? 'Hide password' : 'Show password'}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-text-secondary hover:text-text-primary transition-colors cursor-pointer"
+              >
+                {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+              </button>
+            </div>
           </div>
 
           <button
@@ -88,17 +114,19 @@ export default function LoginPage() {
           </button>
         </form>
 
-        <div className="mt-6 pt-6 border-t border-border-main text-center">
-          <p className="text-sm text-text-secondary mb-2">
-            Don't have an account?
-          </p>
-          <Link
-            href="/register"
-            className="inline-block text-sm font-semibold text-primary hover:underline"
-          >
-            Sign Up &rarr;
-          </Link>
-        </div>
+        {!adminExists && (
+          <div className="mt-6 text-center">
+            <p className="text-sm text-text-secondary mb-2">
+              No admin account yet?
+            </p>
+            <Link
+              href="/register"
+              className="inline-block text-sm font-semibold text-primary hover:text-primary-text-soft transition-colors hover:underline"
+            >
+              Set Up Admin Account &rarr;
+            </Link>
+          </div>
+        )}
       </div>
     </div>
   );
