@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
-import { LayoutDashboard, Users, UserRoundCog, Calendar, CreditCard } from 'lucide-react';
+import { LayoutDashboard, Users, UserRoundCog, Calendar, CreditCard, ShieldCheck } from 'lucide-react';
 
 export default function Sidebar() {
   const pathname = usePathname();
@@ -18,6 +18,7 @@ export default function Sidebar() {
   // Admin only routes
   if (user?.role === 'admin') {
     routes.push({ name: 'Therapists', href: '/therapists', icon: UserRoundCog });
+    routes.push({ name: 'Staff Access', href: '/users', icon: ShieldCheck });
   }
   
   // Both can see billing but staff is read-only

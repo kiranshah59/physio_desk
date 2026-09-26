@@ -7,12 +7,19 @@ class UserBase(BaseModel):
     email: EmailStr
     role: RoleEnum = RoleEnum.staff
 
-class UserCreate(UserBase):
+class UserCreate(BaseModel):
+    email: EmailStr
     password: str
+    role: Optional[RoleEnum] = RoleEnum.staff
+
+class UserUpdate(BaseModel):
+    email: Optional[EmailStr] = None
+    password: Optional[str] = None
+    role: Optional[RoleEnum] = None
 
 class UserResponse(UserBase):
     id: int
-    created_at: datetime
+    created_at: Optional[datetime] = None
 
     class Config:
         from_attributes = True

@@ -120,8 +120,8 @@ Before you begin, ensure you have the following installed:
 
 Open your web browser and navigate to `http://localhost:3000`. You can log in using the seed data credentials provided below.
 
-### 🔑 Demo Credentials
-The `seed.py` script automatically provisions the following accounts:
+### 🔑 Demo Credentials & Account Provisioning
+The `seed.py` script automatically provisions the following initial accounts:
 
 *   **Administrator (Full Access):**
     *   **Email:** `admin@physiodesk.com`
@@ -129,3 +129,7 @@ The `seed.py` script automatically provisions the following accounts:
 *   **Staff Member (Restricted Access):**
     *   **Email:** `staff@physiodesk.com`
     *   **Password:** `password123`
+
+### 👤 Admin Registration & Staff Provisioning
+*   **Admin Registration:** Anyone can self-register a new clinic administrator account at `http://localhost:3000/register` or via the link on the login page.
+*   **Staff Provisioning:** Once logged in as an Administrator, navigate to **Staff Access** (`/users`) in the sidebar. Administrators can dynamically create staff accounts with custom email IDs and passwords, generate strong passwords, reset credentials, and revoke/delete staff access. Created staff members can immediately log in with their credentials and receive staff-level access permissions.

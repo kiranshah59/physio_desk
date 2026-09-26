@@ -14,7 +14,7 @@ interface User {
 interface AuthContextType {
   user: User | null;
   token: string | null;
-  login: (token: string, user: {id: number, role: string}) => void;
+  login: (token: string, user: { id: number; email?: string; role: string }) => void;
   logout: () => void;
   isLoading: boolean;
 }
@@ -30,8 +30,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   useEffect(() => {
     const storedToken = Cookies.get('token');
-    const storedRole = Cookies.get('role'); // We'll store role in cookie for ease
+    const storedRole = Cookies.get('role');
     const storedUserId = Cookies.get('user_id');
+    const storedEmail = Cookies.get('user_email') || 'user@physiodesk.com';
+
+    const isPublicRoute = pathname === '/login' || pathname === '/register';
 
     if (storedToken && storedRole && storedUserId) {
       setToken(storedToken);
@@ -43,29 +46,32 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         } else {
           setUser({
             id: parseInt(storedUserId),
-            email: 'user', // We don't store email in token currently, but that's fine
+            email: storedEmail,
             role: storedRole as 'admin' | 'staff',
           });
         }
       } catch (e) {
         logout();
       }
-    } else if (pathname !== '/login') {
+    } else if (!isPublicRoute) {
       router.push('/login');
     }
     
     setIsLoading(false);
   }, [pathname, router]);
 
-  const login = (newToken: string, userObj: {id: number, role: string}) => {
+  const login = (newToken: string, userObj: { id: number; email?: string; role: string }) => {
     Cookies.set('token', newToken, { expires: 1 }); // 1 day
     Cookies.set('role', userObj.role, { expires: 1 });
     Cookies.set('user_id', userObj.id.toString(), { expires: 1 });
+    if (userObj.email) {
+      Cookies.set('user_email', userObj.email, { expires: 1 });
+    }
     
     setToken(newToken);
     setUser({
       id: userObj.id,
-      email: 'user', // Placeholder
+      email: userObj.email || 'user@physiodesk.com',
       role: userObj.role as 'admin' | 'staff'
     });
     router.push('/');
@@ -75,6 +81,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     Cookies.remove('token');
     Cookies.remove('role');
     Cookies.remove('user_id');
+    Cookies.remove('user_email');
     setToken(null);
     setUser(null);
     router.push('/login');

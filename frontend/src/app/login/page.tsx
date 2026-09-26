@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import Link from 'next/link';
 import { useAuth } from '@/contexts/AuthContext';
 import api from '@/lib/axios';
 
@@ -36,7 +37,7 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-bg-main">
+    <div className="min-h-screen flex items-center justify-center bg-bg-main py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-md w-full bg-surface rounded-xl shadow-md border border-border-main p-8">
         <div className="text-center mb-8">
           <h1 className="text-3xl font-fraunces font-bold text-primary mb-2">PhysioDesk</h1>
@@ -81,15 +82,28 @@ export default function LoginPage() {
           <button
             type="submit"
             disabled={loading}
-            className="w-full bg-primary text-surface py-2 px-4 rounded-lg hover:opacity-90 focus:ring-4 focus:ring-primary/20 transition-colors disabled:opacity-50 disabled:cursor-not-allowed font-medium"
+            className="w-full bg-primary text-surface py-2.5 px-4 rounded-lg hover:opacity-90 focus:ring-4 focus:ring-primary/20 transition-colors disabled:opacity-50 disabled:cursor-not-allowed font-medium shadow-sm cursor-pointer"
           >
             {loading ? 'Signing in...' : 'Sign In'}
           </button>
         </form>
+
+        <div className="mt-6 pt-6 border-t border-border-main text-center">
+          <p className="text-sm text-text-secondary mb-2">
+            Need a new clinic administrator account?
+          </p>
+          <Link
+            href="/register"
+            className="inline-block text-sm font-semibold text-primary hover:underline"
+          >
+            Register as Administrator &rarr;
+          </Link>
+        </div>
         
-        <div className="mt-6 text-center text-sm text-text-secondary">
-          <p>Demo Admin: admin@physiodesk.com / password123</p>
-          <p>Demo Staff: staff@physiodesk.com / password123</p>
+        <div className="mt-6 text-center text-xs text-text-secondary bg-bg-main p-3 rounded-lg border border-border-main/60 space-y-1">
+          <p className="font-medium text-text-primary">Demo Credentials:</p>
+          <p>Admin: <span className="font-mono text-primary-text-soft">admin@physiodesk.com</span> / <span className="font-mono">password123</span></p>
+          <p>Staff: <span className="font-mono text-primary-text-soft">staff@physiodesk.com</span> / <span className="font-mono">password123</span></p>
         </div>
       </div>
     </div>
