@@ -4,7 +4,7 @@ PhysioDesk is a modern, responsive, and full-stack clinic management web applica
 
 ---
 
-## 🌟 Key Features
+## Key Features
 
 ### 1. Role-Based Access Control (RBAC)
 - **Administrator (Full Access):** Can create and manage staff accounts, configure therapist profiles, and has unrestricted access to the entire system. Only one administrator account is permitted per clinic.
@@ -31,7 +31,7 @@ PhysioDesk is a modern, responsive, and full-stack clinic management web applica
 
 ---
 
-## 🛠️ Technology Stack
+## Technology Stack
 
 **Frontend:**
 - **Framework:** Next.js (React) with App Router
@@ -51,7 +51,7 @@ PhysioDesk is a modern, responsive, and full-stack clinic management web applica
 
 ---
 
-## 🚀 Setup & Installation Instructions
+## Setup & Installation Instructions
 
 Follow these steps to get the application running locally on your machine for development or testing.
 
@@ -128,7 +128,7 @@ npm run dev
 
 ---
 
-## 🔐 Test Login Credentials
+## Test Login Credentials
 
 If you ran the `python seed.py` command during setup, the database is pre-populated with two test users representing the two system roles. Use these credentials to log in and explore the app:
 
@@ -144,7 +144,7 @@ If you ran the `python seed.py` command during setup, the database is pre-popula
 
 ---
 
-## 🧠 Technical Assumptions Made
+## Technical Assumptions Made
 
 During the architecture and development of this application, several technical and structural assumptions were made to align with the scope:
 
@@ -156,7 +156,7 @@ During the architecture and development of this application, several technical a
 
 ---
 
-## 💡 Future Improvements (With More Time)
+## Future Improvements (With More Time)
 
 Given more time to scale and prepare the application for a true enterprise production environment, I would implement the following additions:
 
