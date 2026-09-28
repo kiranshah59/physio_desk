@@ -2,6 +2,7 @@
 venv/
 env/
 .env
+.env.local
 .venv/
 env.bak/
 venv.bak/

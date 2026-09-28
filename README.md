@@ -83,6 +83,12 @@ The app will be available at `http://localhost:3000`.
 Ensure PostgreSQL is running. You must create an empty database (e.g., named `physiodesk`). 
 By default, the backend connects to Postgres at `localhost` with the username `postgres` and password `postgres`. 
 
+The repository includes local environment files:
+- `backend/.env` contains PostgreSQL, JWT, and CORS settings.
+- `frontend/.env.local` contains the backend API URL.
+
+These files are ignored by Git. Replace the local placeholder `SECRET_KEY` with a long random value before deployment, and never commit real passwords or production secrets.
+
 If your local PostgreSQL setup uses different credentials, you can override them by exporting the following environment variables before running the backend:
 - `POSTGRES_SERVER` (default: localhost)
 - `POSTGRES_USER` (default: postgres)
