@@ -59,10 +59,27 @@ Follow these steps to get the application running locally on your machine for de
 Ensure you have the following installed on your system:
 - Node.js (v18 or higher)
 - Python (3.9 or higher)
-- PostgreSQL (Running locally or hosted, e.g., on Docker)
+- PostgreSQL (Running locally or hosted)
 - Git
+- Docker and Docker Compose (Recommended for easy deployment)
 
-### 2. Database Setup & Environment Variables
+### 2. Quick Deployment (Docker)
+The easiest way to get the entire application (Database, Backend, and Frontend) running simultaneously is using Docker.
+
+```bash
+# From the root directory, simply run:
+docker-compose up --build
+```
+This will automatically:
+1. Spin up a PostgreSQL database.
+2. Build and start the FastAPI backend (running migrations and seeding data automatically).
+3. Build and start the Next.js frontend.
+
+The app will be available at `http://localhost:3000`.
+
+*(If you prefer to run things manually without Docker, continue to step 3).*
+
+### 3. Database Setup & Environment Variables (Manual Setup)
 Ensure PostgreSQL is running. You must create an empty database (e.g., named `physiodesk`). 
 By default, the backend connects to Postgres at `localhost` with the username `postgres` and password `postgres`. 
 
@@ -160,7 +177,7 @@ During the architecture and development of this application, several technical a
 
 Given more time to scale and prepare the application for a true enterprise production environment, I would implement the following additions:
 
-1. Containerization & CI/CD: Add `Dockerfile` and `docker-compose.yml` configurations to instantly spin up the frontend, backend, and PostgreSQL database simultaneously. Implement GitHub Actions for automated testing and linting on every push.
+1. CI/CD Pipelines: Implement GitHub Actions for automated testing and linting on every push, and automated deployments to cloud providers.
 2. Automated Email Integration: Currently, when an admin creates a staff account, the password is automatically generated and displayed in plaintext on the screen. In production, I would integrate an email service (like SendGrid or AWS SES) to send a secure "Welcome" email to the staff member with a one-time password setup link.
 3. Server-Side Pagination & Search: As the clinic's database grows over years of operation, loading all invoices or patients at once will degrade performance. I would implement server-side pagination, debounced searching, and advanced filtering directly in the FastAPI endpoints.
 4. Comprehensive Automated Testing: Add comprehensive unit testing (with `pytest` for the FastAPI backend) and end-to-end integration tests (with `Cypress` or `Playwright` for the Next.js frontend) to automatically verify data integrity and prevent regressions during updates.
