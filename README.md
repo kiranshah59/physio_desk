@@ -1,135 +1,113 @@
-# PhysioDesk - Clinic Management Tool
+# PhysioDesk
 
-PhysioDesk is a full-stack clinic management tool designed for a physiotherapy practice. It provides a robust backend API and a modern, responsive frontend for managing patients, therapists, appointments, and billing.
+PhysioDesk is a comprehensive clinic management web application built for physiotherapy clinics. It enables administrators and staff members to manage patients, schedule appointments, handle therapist availability, and process invoices. 
 
-## Tech Stack
-
-As per the project requirements, the following tech stack was utilized:
-
-*   **Backend:** Python 3.12+ with **FastAPI**
-*   **Frontend:** **Next.js 15** (App Router) with Tailwind CSS v4
-*   **Database:** **PostgreSQL** 17
-*   **ORM / Migrations:** **SQLAlchemy** (async/sync support) and **Alembic**. We chose this combination because it is the industry standard for Python/FastAPI applications, providing excellent type safety, transaction management, and reliable schema migrations.
-
-## Assumptions Made
-
-During the development of this application, the following reasonable assumptions were made regarding ambiguous requirements:
-
-1.  **Therapist Scheduling:** We assumed a default clinic operational window of 09:00 to 17:00, with a standard appointment slot duration of 30 minutes. Therapists can have their schedules customized within the application by an admin.
-2.  **Double-Booking Logic:** We assumed that a therapist cannot be double-booked. The backend API enforces this by checking for overlapping `start_time` and `end_time` intervals for a specific `therapist_id` before confirming an appointment.
-3.  **Role-Based Access Control (RBAC):** We assumed that `staff` can book appointments, manage patients, and view (but not create) invoices. `admin` users have exclusive access to manage Therapist profiles and schedules, as well as generate new invoices.
-4.  **Therapist Schedule Overrides:** The prompt asked to consider what happens to existing appointments when removing a therapist or overriding their schedule. For overrides, we implemented a dedicated `TherapistOverride` database model to robustly handle custom working hours and specific days off (e.g. holidays) without permanently modifying their base weekly schedule.
-5.  **Calendar Grid Layout:** The prompt asked for a "Calendar/grid view: therapists as columns, time slots as rows (or your own layout)". We chose to implement a comprehensive fixed-interval grid (30-minute intervals from 09:00 to 17:00) with therapists as columns. This provides an intuitive, highly visual layout where empty cells can be clicked to initiate a booking, matching real-world clinic expectations.
-6.  **Authentication:** We implemented secure, stateless authentication using JSON Web Tokens (JWT) stored in HTTP cookies/local storage for the frontend, with passwords securely hashed via `bcrypt` in the database.
-7.  **Design System:** We adhered strictly to the provided hex color palette and typography rules, mapping the provided tokens into a customized Tailwind CSS theme (`globals.css`).
-
-## 🚀 Detailed Setup Instructions
-
-Follow these step-by-step instructions to get the PhysioDesk application running on your local machine.
-
-### Prerequisites
-Before you begin, ensure you have the following installed:
-*   **Python 3.12+**
-*   **Node.js 18+** & npm
-*   **PostgreSQL 17+**
+The application utilizes a **Next.js** frontend with **Tailwind CSS** for a responsive, modern interface and a **FastAPI** backend with **SQLAlchemy** for robust data management and validation.
 
 ---
 
-### 1. Database Setup
-1. Open your PostgreSQL terminal (psql) or pgAdmin.
-2. Create a new database for the project:
-   ```sql
-   CREATE DATABASE physiodesk;
-   ```
-3. Note your PostgreSQL username and password (the default username is usually `postgres`).
+## 🚀 Setup Instructions
+
+Follow these steps to get the application running locally on your machine.
+
+### 1. Prerequisites
+- **Node.js** (v18 or higher)
+- **Python** (3.9 or higher)
+- **PostgreSQL** (Running locally or hosted)
+- **Git**
+
+### 2. Database Setup
+Ensure PostgreSQL is running on your machine and you have created a database named `physiodesk`.
+By default, the backend connects to Postgres at `localhost` with the username `postgres` and password `postgres`.
+You can override these by setting the following environment variables:
+- `POSTGRES_SERVER`
+- `POSTGRES_USER`
+- `POSTGRES_PASSWORD`
+- `POSTGRES_DB`
+
+### 3. Backend Setup
+Navigate to the backend directory and set up the Python environment:
+
+```bash
+cd backend
+python -m venv venv
+
+# Activate the virtual environment:
+# On Windows:
+venv\Scripts\activate
+# On macOS/Linux:
+source venv/bin/activate
+
+# Install dependencies:
+pip install -r requirements.txt
+```
+
+**Run Migrations & Seed the Database:**
+PhysioDesk uses Alembic for database migrations.
+
+```bash
+# Run migrations to create database tables
+alembic upgrade head
+
+# Seed the database with initial users, therapists, patients, and appointments
+python seed.py
+```
+
+**Start the Backend Server:**
+```bash
+uvicorn app.main:app --reload
+# The backend API will be available at http://localhost:8000
+# Interactive API documentation at http://localhost:8000/docs
+```
+
+### 4. Frontend Setup
+Open a new terminal window, navigate to the frontend directory:
+
+```bash
+cd frontend
+
+# Install dependencies
+npm install
+
+# Start the development server
+npm run dev
+# The frontend application will be available at http://localhost:3000
+```
 
 ---
 
-### 2. Backend Setup (FastAPI)
+## 🔐 Test Login Credentials
 
-1. Open your terminal and navigate to the backend directory:
-   ```bash
-   cd backend
-   ```
+The `seed.py` script automatically creates two users with different access levels. You can use these credentials to log in and test the application:
 
-2. Create a Python virtual environment to isolate dependencies:
-   ```bash
-   # On Windows:
-   python -m venv venv
-   
-   # On macOS/Linux:
-   python3 -m venv venv
-   ```
+### Administrator (Full Access)
+- **Email:** `admin@physiodesk.com`
+- **Password:** `password123`
+*(Can manage staff accounts, therapists, and has full system access)*
 
-3. Activate the virtual environment:
-   ```bash
-   # On Windows:
-   .\venv\Scripts\activate
-   
-   # On macOS/Linux:
-   source venv/bin/activate
-   ```
-
-4. Install the required Python packages:
-   ```bash
-   pip install -r requirements.txt
-   ```
-
-5. (Optional) By default, the app expects the database at `postgresql://postgres:password@localhost/physiodesk`. If your postgres credentials differ, update the `SQLALCHEMY_DATABASE_URL` string located inside `backend/app/db/database.py`.
-
-6. Run the database migrations using Alembic. This will automatically create all the necessary tables in your PostgreSQL database:
-   ```bash
-   alembic upgrade head
-   ```
-
-7. Seed the database with initial demo data (demo users, dummy patients, therapists, etc.):
-   ```bash
-   python seed.py
-   ```
-
-8. Start the FastAPI development server:
-   ```bash
-   uvicorn app.main:app --reload
-   ```
-   *The backend API will now be running at `http://localhost:8000`.*
-   *You can view the auto-generated Swagger documentation at `http://localhost:8000/docs`.*
+### Staff Member (Restricted Access)
+- **Email:** `staff@physiodesk.com`
+- **Password:** `password123`
+*(Can view and manage patients, appointments, and invoices. Read-only access to therapists.)*
 
 ---
 
-### 3. Frontend Setup (Next.js)
+## 🧠 Assumptions Made
 
-1. Open a **new** terminal window (keep the backend running in the first one) and navigate to the frontend directory:
-   ```bash
-   cd frontend
-   ```
+During the development of this application, several technical and structural assumptions were made:
 
-2. Install the necessary Node.js dependencies:
-   ```bash
-   npm install
-   ```
-
-3. Start the Next.js development server:
-   ```bash
-   npm run dev
-   ```
-   *The frontend application will now be running at `http://localhost:3000`.*
+1. **Single Admin System:** There is a strict rule that only one administrator account can exist. The first account created (via `seed.py` or the UI) locks the registration page. Subsequent staff accounts must be created and managed by the administrator.
+2. **Cascade Deletion:** Patients are deeply linked to both appointments and invoices. I assumed that if a patient is deleted from the system, all their past appointments and invoices should also be permanently deleted (cascading delete) to maintain referential data integrity and avoid orphaned records.
+3. **Local State Filtering:** I assumed that the volume of data (invoices, therapists, patients) is relatively small for a single clinic. Thus, filtering and searching operations were implemented locally on the frontend rather than via server-side querying.
 
 ---
 
-### 4. Accessing the Application
+## 💡 What I Would Do Differently / Add with More Time
 
-Open your web browser and navigate to `http://localhost:3000`. You can log in using the seed data credentials provided below.
+Given more time to scale and improve the application for a production environment, I would focus on:
 
-### 🔑 Demo Credentials & Account Provisioning
-The `seed.py` script automatically provisions the following initial accounts:
-
-*   **Administrator (Full Access):**
-    *   **Email:** `admin@physiodesk.com`
-    *   **Password:** `password123`
-*   **Staff Member (Restricted Access):**
-    *   **Email:** `staff@physiodesk.com`
-    *   **Password:** `password123`
-
-### 👤 Admin Registration & Staff Provisioning
-*   **Admin Registration:** Anyone can self-register a new clinic administrator account at `http://localhost:3000/register` or via the link on the login page.
-*   **Staff Provisioning:** Once logged in as an Administrator, navigate to **Staff Access** (`/users`) in the sidebar. Administrators can dynamically create staff accounts with custom email IDs and passwords, generate strong passwords, reset credentials, and revoke/delete staff access. Created staff members can immediately log in with their credentials and receive staff-level access permissions.
+1. **Automated Emails:** Instead of displaying plaintext passwords when an admin creates a staff account, I would integrate an email service (like SendGrid or AWS SES) to send an automated "Welcome" email with a secure, one-time password setup link.
+2. **Server-Side Pagination & Search:** Implement server-side pagination, searching, and advanced filtering for patients, appointments, and invoices to maintain frontend performance as the clinic's database grows.
+3. **Comprehensive Testing:** Add comprehensive unit testing (with `pytest` for backend) and end-to-end integration tests (with Cypress or Playwright) to automatically ensure data integrity and prevent regressions during updates.
+4. **Granular RBAC (Role-Based Access Control):** Expand the simple Admin/Staff binary into a more robust RBAC system, allowing custom permission sets (e.g., Receptionist, Billing Specialist, Therapist).
+5. **Social Login / OAuth2:** Integrate third-party authentication (Google, Microsoft) to streamline the login process and increase security.
